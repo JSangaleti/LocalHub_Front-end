@@ -1,0 +1,3 @@
+class StoreService {
+  const StoreService();
+}

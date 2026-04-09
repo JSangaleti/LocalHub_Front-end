@@ -1,0 +1,3 @@
+class MockData {
+  MockData._();
+}
