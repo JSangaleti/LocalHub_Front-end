@@ -1,0 +1,3 @@
+class PostService {
+  const PostService();
+}
