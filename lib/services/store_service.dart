@@ -1,3 +1,5 @@
 class StoreService {
-  const StoreService();
+  Future<Map<String, dynamic>> getStoreById(int id) async {
+    return {};
+  }
 }
