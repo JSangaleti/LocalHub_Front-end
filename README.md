@@ -89,11 +89,5 @@ Rodar analise estatica e testes:
 flutter analyze
 flutter test
 ```
-
-## Proximos passos sugeridos
-
-- Integrar login/cadastro com servicos mock em `services/`
-- Implementar feed com modelo de post real (`models/post_model.dart`)
-- Adicionar filtro por categoria no feed
 - Implementar busca de comercios por categoria
 - Conectar gradualmente com a API do backend quando estiver disponivel
