@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/custom_text_field.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -11,7 +16,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
+  final AuthService _authService = AuthService();
   String _accountType = 'cliente';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -29,6 +36,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  Future<void> _handleRegister() async {
+    if (_isLoading) return;
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha nome, e-mail e senha.')),
+      );
+      return;
+    }
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A senha deve ter pelo menos 6 caracteres.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.register(
+        name: name,
+        email: email,
+        password: password,
+        accountType: _accountType,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cadastro realizado com sucesso.')),
+      );
+      Navigator.pop(context);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nao foi possivel concluir o cadastro.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,20 +101,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            TextField(
+            CustomTextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Nome'),
+              label: 'Nome',
             ),
             const SizedBox(height: 16),
-            TextField(
+            CustomTextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'E-mail'),
+              label: 'E-mail',
             ),
             const SizedBox(height: 16),
-            TextField(
+            CustomTextField(
               controller: _passwordController,
+              label: 'Senha',
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Senha'),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -72,11 +136,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cadastrar'),
+            CustomButton(
+              text: 'Cadastrar',
+              isLoading: _isLoading,
+              onPressed: _handleRegister,
             ),
           ],
         ),
