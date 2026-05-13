@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_routes.dart';
 
 import '../core/constants/app_colors.dart';
 
@@ -14,35 +15,38 @@ class HomeHeader extends StatelessWidget {
         bottom: false,
         child: Row(
           children: [
-            const Icon(
-              Icons.storefront_outlined,
-              color: AppColors.primary,
-              size: 30,
+            Image.asset(
+              'assets/images/logo_localhub.png',
+              height: 42,
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 8),
-            Text(
-              'LocalHub',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
             const Spacer(),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.home_outlined),
-            ),
             IconButton(
               onPressed: () {},
               icon: const Icon(Icons.search),
             ),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.person_outline),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.view_headline),
+              onSelected: (value) {
+                if (value == 'profile') {
+                  Navigator.pushNamed(context, AppRoutes.storeProfile);
+                }
+
+                if (value == 'logout') {
+                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'profile',
+                  child: Text('Perfil do Usuário'),
+                ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Text('Sair'),
+                ),
+              ],
             ),
           ],
         ),

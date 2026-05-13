@@ -11,7 +11,6 @@ class PostModel {
   final int comments;
   final bool isPromotion;
   final DateTime? createdAt;
-  final String? location;
 
   const PostModel({
     required this.id,
@@ -26,7 +25,6 @@ class PostModel {
     this.comments = 0,
     this.isPromotion = false,
     this.createdAt,
-    this.location,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -44,7 +42,6 @@ class PostModel {
       comments: _parseInt(json['comments']),
       isPromotion: _parseBool(json['isPromotion'] ?? json['is_promotion']),
       createdAt: _parseDateTime(json['createdAt'] ?? json['created_at']),
-      location: json['location']?.toString(),
     );
   }
 
