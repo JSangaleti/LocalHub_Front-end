@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/register_screen.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/splash/splash_screen.dart';
-import 'screens/store/store_profile_screen.dart';
+import 'providers/category_provider.dart';
+import 'providers/post_provider.dart';
+import 'providers/store_provider.dart';
+import 'providers/user_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,18 +17,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'LocalHub',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      initialRoute: AppRoutes.splash,
-      routes: {
-        AppRoutes.splash: (context) => const SplashScreen(),
-        AppRoutes.login: (context) => const LoginScreen(),
-        AppRoutes.register: (context) => const RegisterScreen(),
-        AppRoutes.home: (context) => const HomeScreen(),
-        AppRoutes.storeProfile: (context) => const StoreProfileScreen(),
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => StoreProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => PostProvider()),
+      ],
+      child: MaterialApp(
+        title: 'LocalHub',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        initialRoute: AppRoutes.splash,
+        routes: AppRoutes.routes,
+      ),
     );
   }
 }

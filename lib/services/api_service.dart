@@ -73,6 +73,42 @@ class ApiService {
     }
   }
 
+  Future<dynamic> put(String path, Map<String, dynamic> body) async {
+    try {
+      final uri = Uri.parse('$baseUrl$path');
+      final response = await _client.put(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } on http.ClientException catch (e) {
+      throw ApiException(_connectionHint(e.message));
+    } on FormatException catch (e) {
+      throw ApiException('Resposta invalida do servidor: ${e.message}');
+    } catch (e) {
+      throw ApiException(_connectionHint(e.toString()));
+    }
+  }
+
+  Future<dynamic> delete(String path) async {
+    try {
+      final uri = Uri.parse('$baseUrl$path');
+      final response = await _client.delete(uri);
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } on http.ClientException catch (e) {
+      throw ApiException(_connectionHint(e.message));
+    } on FormatException catch (e) {
+      throw ApiException('Resposta invalida do servidor: ${e.message}');
+    } catch (e) {
+      throw ApiException(_connectionHint(e.toString()));
+    }
+  }
+
   String _connectionHint(String? detail) {
     final base = 'Nao foi possivel conectar a API em $baseUrl.\n'
         'Confirme que o backend esta rodando (ex.: porta 3000).\n'

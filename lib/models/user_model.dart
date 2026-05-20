@@ -1,22 +1,75 @@
 class UserModel {
-  final String id;
+  final int id;
   final String name;
   final String email;
-  final String accountType;
+  final String userType;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const UserModel({
     required this.id,
     required this.name,
     required this.email,
-    required this.accountType,
+    required this.userType,
+    this.createdAt,
+    this.updatedAt,
   });
+
+  /// Compatível com telas que usavam [accountType].
+  String get accountType => userType;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'].toString(),
+      id: _parseInt(json['id']),
       name: (json['name'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
-      accountType: (json['userType'] ?? 'cliente').toString(),
+      userType: (json['userType'] ?? 'cliente').toString(),
+      createdAt: _parseDateTime(json['createdAt']),
+      updatedAt: _parseDateTime(json['updatedAt']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'userType': userType,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toCreateJson({
+    required String password,
+  }) {
+    return {
+      'name': name,
+      'email': email,
+      'password': password,
+      'userType': userType,
+    };
+  }
+
+  Map<String, dynamic> toUpdateJson({String? password}) {
+    final map = <String, dynamic>{
+      'name': name,
+      'email': email,
+      'userType': userType,
+    };
+    if (password != null && password.isNotEmpty) {
+      map['password'] = password;
+    }
+    return map;
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
   }
 }

@@ -22,13 +22,13 @@ class StoreService {
   /// Resolve a loja para exibir no perfil: por id, dono ou primeira da lista.
   Future<StoreModel?> resolveForProfile({
     int? storeId,
-    String? ownerUserId,
+    int? ownerUserId,
   }) async {
     if (storeId != null) {
       return getById(storeId);
     }
     final all = await getAll();
-    if (ownerUserId != null && ownerUserId.isNotEmpty) {
+    if (ownerUserId != null) {
       try {
         return all.firstWhere((s) => s.ownerUserId == ownerUserId);
       } catch (_) {

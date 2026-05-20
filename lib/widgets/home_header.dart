@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_routes.dart';
 
 import '../core/constants/app_colors.dart';
+import '../core/constants/app_routes.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
@@ -29,20 +29,26 @@ class HomeHeader extends StatelessWidget {
             PopupMenuButton<String>(
               icon: const Icon(Icons.view_headline),
               onSelected: (value) {
+                if (value == 'admin') {
+                  Navigator.pushNamed(context, AppRoutes.admin);
+                }
                 if (value == 'profile') {
                   Navigator.pushNamed(context, AppRoutes.storeProfile);
                 }
-
                 if (value == 'logout') {
                   Navigator.pushReplacementNamed(context, AppRoutes.login);
                 }
               },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: 'admin',
+                  child: Text('Gerenciar dados'),
+                ),
+                PopupMenuItem(
                   value: 'profile',
                   child: Text('Perfil do Usuário'),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'logout',
                   child: Text('Sair'),
                 ),

@@ -9,8 +9,17 @@ class PostService {
 
   Future<List<PostModel>> getPosts() async {
     final response = await _api.get('/posts');
-    final rawList = (response as List<dynamic>)
-        .cast<Map<String, dynamic>>();
-    return rawList.map(PostModel.fromJson).toList();
+    final list = _extractList(response);
+    return list.map(PostModel.fromJson).toList();
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic response) {
+    if (response is Map<String, dynamic> && response['data'] is List) {
+      return (response['data'] as List).cast<Map<String, dynamic>>();
+    }
+    if (response is List) {
+      return response.cast<Map<String, dynamic>>();
+    }
+    return [];
   }
 }

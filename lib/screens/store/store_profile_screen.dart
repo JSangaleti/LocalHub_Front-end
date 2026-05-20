@@ -8,7 +8,7 @@ import '../../widgets/store_card.dart';
 
 /// Argumentos opcionais ao abrir [StoreProfileScreen].
 class StoreProfileRouteArgs {
-  final String? ownerUserId;
+  final int? ownerUserId;
   final int? storeId;
 
   const StoreProfileRouteArgs({
@@ -54,7 +54,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
     final auth = AuthService().currentUser;
 
     int? storeId = args?.storeId;
-    String? ownerUserId = args?.ownerUserId;
+    int? ownerUserId = args?.ownerUserId;
 
     if (ownerUserId == null &&
         auth != null &&
@@ -120,7 +120,8 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                           StoreCard(
                             name: _store!.name,
                             category: _store!.category,
-                            address: _store!.address ?? 'Endereco nao informado',
+                            address:
+                                _store!.address ?? 'Endereco nao informado',
                           ),
                           const SizedBox(height: 16),
                           Text(
