@@ -25,7 +25,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
   int? _userId;
   String _userType = 'cliente';
 
-  static const _userTypes = ['cliente', 'comercio', 'admin'];
+  static const _userTypesClienteComercio = ['cliente', 'comercio'];
 
   @override
   void initState() {
@@ -156,7 +156,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
                     DropdownButtonFormField<String>(
                       value: _userType,
                       decoration: const InputDecoration(labelText: 'Tipo de usuário'),
-                      items: _userTypes
+                      items: (_isEdit && _userType == 'admin'
+                              ? ['admin', ..._userTypesClienteComercio]
+                              : _userTypesClienteComercio)
                           .map(
                             (t) => DropdownMenuItem(value: t, child: Text(t)),
                           )

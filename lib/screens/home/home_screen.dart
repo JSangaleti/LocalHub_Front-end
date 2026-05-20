@@ -5,9 +5,13 @@ import 'package:localhub_front/widgets/home_header.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
+import '../../models/store_model.dart';
 import '../../providers/post_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/my_store_service.dart';
 import '../../widgets/post_card.dart';
+import '../posts/owner_post_form_screen.dart';
+import '../store/store_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,13 +21,31 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final MyStoreService _myStoreService = MyStoreService();
+
   String selectedCategory = 'Todos';
   List<String> categories = ['Todos'];
+  StoreModel? _myStore;
+
+  bool get _ownsStore => _myStore != null;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPosts());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPosts();
+      _loadMyStore();
+    });
+  }
+
+  Future<void> _loadMyStore() async {
+    try {
+      final store = await _myStoreService.findStoreForCurrentUser();
+      if (!mounted) return;
+      setState(() => _myStore = store);
+    } on ApiException {
+      if (mounted) setState(() => _myStore = null);
+    }
   }
 
   Future<void> _loadPosts() async {
@@ -46,13 +68,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _openNewPost() async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const OwnerPostFormScreen()),
+    );
+    if (saved == true && mounted) await _loadPosts();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          const HomeHeader(),
+          HomeHeader(
+            hasStore: _ownsStore,
+            onStoreChanged: _loadMyStore,
+          ),
           CategoryFilterBar(
             selectedCategory: selectedCategory,
             categories: categories,
@@ -104,7 +136,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: RefreshIndicator(
-                    onRefresh: _loadPosts,
+                    onRefresh: () async {
+                      await _loadPosts();
+                      await _loadMyStore();
+                    },
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -118,6 +153,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: post.title,
                           description: post.description,
                           category: post.category,
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.storeProfile,
+                              arguments: StoreProfileRouteArgs(
+                                storeId: post.storeId,
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -128,11 +172,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.admin),
-        icon: const Icon(Icons.settings),
-        label: const Text('Gerenciar'),
-      ),
+      floatingActionButton: _ownsStore
+          ? FloatingActionButton.extended(
+              onPressed: _openNewPost,
+              icon: const Icon(Icons.add),
+              label: const Text('Novo post'),
+            )
+          : null,
     );
   }
 }

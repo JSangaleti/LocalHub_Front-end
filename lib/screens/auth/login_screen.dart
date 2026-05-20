@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/constants/app_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
-import '../store/store_profile_screen.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -56,22 +55,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final user = await _authService.login(
+      await _authService.login(
         email: email,
         password: password,
       );
 
       if (!mounted) return;
 
-      if (user.accountType == 'comercio') {
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.storeProfile,
-          arguments: StoreProfileRouteArgs(ownerUserId: user.id),
-        );
-      } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     } on ApiException catch (error) {
       if (!mounted) return;
 
@@ -292,6 +283,17 @@ class _LoginForm extends StatelessWidget {
         OutlinedButton(
           onPressed: isLoading ? null : onRegister,
           child: const Text('Cadastrar'),
+        ),
+
+        const SizedBox(height: 20),
+
+        Text(
+          'Admin: ${AppAuth.adminEmail}',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary.withValues(alpha: 0.9),
+          ),
         ),
       ],
     );

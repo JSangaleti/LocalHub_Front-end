@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/category_model.dart';
+import '../../providers/category_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/category_dropdown_field.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import 'store_form_route_args.dart';
 
 class StoreFormScreen extends StatefulWidget {
   const StoreFormScreen({super.key});
@@ -17,21 +22,70 @@ class StoreFormScreen extends StatefulWidget {
 class _StoreFormScreenState extends State<StoreFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _ownerIdController = TextEditingController();
-  final _categoryIdController = TextEditingController();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
   final _hoursController = TextEditingController();
   final _contactController = TextEditingController();
 
+  List<CategoryModel> _categories = [];
+  int? _selectedCategoryId;
   bool _isLoading = false;
+  bool _loadingCategories = true;
   bool _isEdit = false;
+  bool _lockOwnerId = false;
   int? _storeId;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initFromRoute());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  StoreFormRouteArgs? _readCreateArgs() {
+    final raw = ModalRoute.of(context)?.settings.arguments;
+    if (raw is StoreFormRouteArgs) return raw;
+    return null;
+  }
+
+  Future<void> _bootstrap() async {
+    await _loadCategories();
+    _applyCreateArgs();
+    await _initFromRoute();
+  }
+
+  void _applyCreateArgs() {
+    final args = _readCreateArgs();
+    if (args == null) {
+      final user = AuthService().currentUser;
+      if (user != null) {
+        _ownerIdController.text = user.id.toString();
+        _lockOwnerId = true;
+      }
+      return;
+    }
+    _ownerIdController.text = args.ownerUserId.toString();
+    _lockOwnerId = args.lockOwnerId;
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() => _loadingCategories = true);
+    try {
+      final provider = context.read<CategoryProvider>();
+      if (provider.items.isEmpty) {
+        await provider.fetchAll();
+      }
+      if (!mounted) return;
+      setState(() {
+        _categories = provider.items;
+        _loadingCategories = false;
+      });
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _loadingCategories = false);
+        showErrorSnackBar(context, e.message);
+      }
+    }
   }
 
   Future<void> _initFromRoute() async {
@@ -48,7 +102,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       final store = await context.read<StoreProvider>().fetchById(args);
       if (!mounted) return;
       _ownerIdController.text = store.ownerUserId?.toString() ?? '';
-      _categoryIdController.text = store.categoryId?.toString() ?? '';
+      _selectedCategoryId = store.categoryId;
       _nameController.text = store.name;
       _descriptionController.text = store.description ?? '';
       _addressController.text = store.address ?? '';
@@ -64,7 +118,6 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   @override
   void dispose() {
     _ownerIdController.dispose();
-    _categoryIdController.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
@@ -73,16 +126,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     super.dispose();
   }
 
-  int? _parseRequiredInt(String? value, String field) {
-    final parsed = int.tryParse(value?.trim() ?? '');
-    if (parsed == null || parsed <= 0) return null;
-    return parsed;
-  }
-
   Map<String, dynamic> _buildBody() {
     return {
       'ownerUserId': int.parse(_ownerIdController.text.trim()),
-      'categoryId': int.parse(_categoryIdController.text.trim()),
+      'categoryId': _selectedCategoryId,
       'name': _nameController.text.trim(),
       if (_descriptionController.text.trim().isNotEmpty)
         'description': _descriptionController.text.trim(),
@@ -100,13 +147,12 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
 
     setState(() => _isLoading = true);
     final provider = context.read<StoreProvider>();
-    final body = _buildBody();
 
     try {
       if (_isEdit && _storeId != null) {
-        await provider.update(_storeId!, body);
+        await provider.update(_storeId!, _buildBody());
       } else {
-        await provider.create(body);
+        await provider.create(_buildBody());
       }
       if (!mounted) return;
       showSuccessSnackBar(
@@ -122,13 +168,45 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   }
 
   String? _requiredIntValidator(String? value, String label) {
-    final parsed = _parseRequiredInt(value, label);
-    if (parsed == null) return '$label obrigatório (número válido)';
+    final parsed = int.tryParse(value?.trim() ?? '');
+    if (parsed == null || parsed <= 0) return '$label obrigatório (número válido)';
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingCategories) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_isEdit ? 'Editar loja' : 'Nova loja')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_categories.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_isEdit ? 'Editar loja' : 'Nova loja')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Cadastre ao menos uma categoria antes de criar uma loja.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _loadCategories,
+                  child: const Text('Recarregar categorias'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text(_isEdit ? 'Editar loja' : 'Nova loja')),
       body: _isLoading && _isEdit && _nameController.text.isEmpty
@@ -139,18 +217,29 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    CustomTextField(
-                      label: 'ID do dono (ownerUserId)',
-                      controller: _ownerIdController,
-                      keyboardType: TextInputType.number,
-                      validator: (v) => _requiredIntValidator(v, 'Dono'),
-                    ),
+                    if (!_lockOwnerId)
+                      CustomTextField(
+                        label: 'ID do dono (ownerUserId)',
+                        controller: _ownerIdController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) => _requiredIntValidator(v, 'Dono'),
+                      )
+                    else
+                      InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Dono da loja (você)',
+                        ),
+                        child: Text(
+                          _ownerIdController.text,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
                     const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'ID da categoria (categoryId)',
-                      controller: _categoryIdController,
-                      keyboardType: TextInputType.number,
-                      validator: (v) => _requiredIntValidator(v, 'Categoria'),
+                    CategoryDropdownField(
+                      categories: _categories,
+                      value: _selectedCategoryId,
+                      onChanged: (id) =>
+                          setState(() => _selectedCategoryId = id),
                     ),
                     const SizedBox(height: 12),
                     CustomTextField(

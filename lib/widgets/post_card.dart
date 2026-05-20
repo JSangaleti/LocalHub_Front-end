@@ -5,6 +5,7 @@ class PostCard extends StatelessWidget {
   final String title;
   final String description;
   final String category;
+  final VoidCallback? onTap;
 
   const PostCard({
     super.key,
@@ -12,13 +13,17 @@ class PostCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.category,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,6 +46,7 @@ class PostCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

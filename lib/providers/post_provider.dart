@@ -29,6 +29,13 @@ class PostProvider extends ChangeNotifier {
     }
   }
 
+  /// Posts de uma loja (não altera a lista do feed global).
+  Future<List<PostModel>> fetchByStoreId(int storeId) async {
+    final response = await _api.get('/posts?storeId=$storeId');
+    final list = _extractList(response);
+    return list.map(PostModel.fromJson).toList();
+  }
+
   Future<PostModel> fetchById(int id) async {
     final response = await _api.get('/posts/$id');
     return PostModel.fromJson(response as Map<String, dynamic>);

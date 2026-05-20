@@ -11,7 +11,6 @@ class AdminHubScreen extends StatelessWidget {
       ('Usuários', Icons.person_outline, AppRoutes.userList),
       ('Lojas', Icons.store_outlined, AppRoutes.storeList),
       ('Categorias', Icons.category_outlined, AppRoutes.categoryList),
-      ('Posts', Icons.article_outlined, AppRoutes.postList),
     ];
 
     return Scaffold(
