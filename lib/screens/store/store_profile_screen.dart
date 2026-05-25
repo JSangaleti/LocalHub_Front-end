@@ -10,6 +10,7 @@ import '../../services/auth_service.dart';
 import '../../services/store_service.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/post_card.dart';
+import '../../widgets/post_comments_sheet.dart';
 import '../../widgets/store_card.dart';
 import '../posts/owner_post_form_screen.dart';
 
@@ -100,8 +101,11 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
   Future<void> _loadPosts(int storeId) async {
     setState(() => _loadingPosts = true);
     try {
-      final posts =
-          await context.read<PostProvider>().fetchByStoreId(storeId);
+      final userId = AuthService().currentUser?.id;
+      final posts = await context.read<PostProvider>().fetchByStoreId(
+            storeId,
+            userId: userId,
+          );
       if (!mounted) return;
       setState(() => _storePosts = posts);
     } on ApiException catch (e) {
@@ -109,6 +113,34 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
     } finally {
       if (mounted) setState(() => _loadingPosts = false);
     }
+  }
+
+  void _syncPostFromProvider(PostModel updated) {
+    setState(() {
+      _storePosts = _storePosts
+          .map((p) => p.id == updated.id ? updated : p)
+          .toList();
+    });
+  }
+
+  Future<void> _handleLike(PostModel post) async {
+    final user = AuthService().currentUser;
+    if (user == null) {
+      showErrorSnackBar(context, 'Faça login para curtir posts.');
+      return;
+    }
+    try {
+      final updated =
+          await context.read<PostProvider>().toggleLike(post, user.id);
+      _syncPostFromProvider(updated);
+    } on ApiException catch (e) {
+      if (mounted) showErrorSnackBar(context, e.message);
+    }
+  }
+
+  Future<void> _handleComment(PostModel post) async {
+    final updated = await showPostCommentsSheet(context, post: post);
+    if (updated != null) _syncPostFromProvider(updated);
   }
 
   Future<void> _openNewPost() async {
@@ -215,10 +247,9 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                                 itemBuilder: (context, index) {
                                   final post = _storePosts[index];
                                   return PostCard(
-                                    storeName: post.storeName,
-                                    title: post.title,
-                                    description: post.description,
-                                    category: post.category,
+                                    post: post,
+                                    onLike: () => _handleLike(post),
+                                    onComment: () => _handleComment(post),
                                   );
                                 },
                               ),

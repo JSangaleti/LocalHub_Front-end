@@ -10,6 +10,7 @@ class PostModel {
   final String? storeImageUrl;
   final int likes;
   final int comments;
+  final bool likedByMe;
   final bool isPromotion;
   final DateTime? createdAt;
 
@@ -25,6 +26,7 @@ class PostModel {
     this.storeImageUrl,
     this.likes = 0,
     this.comments = 0,
+    this.likedByMe = false,
     this.isPromotion = false,
     this.createdAt,
   });
@@ -43,6 +45,7 @@ class PostModel {
           json['store_image_url']?.toString(),
       likes: _parseIntDefault(json['likes']),
       comments: _parseIntDefault(json['comments']),
+      likedByMe: _parseBool(json['likedByMe'] ?? json['liked_by_me']),
       isPromotion: _parseBool(json['isPromotion'] ?? json['is_promotion']),
       createdAt: _parseDateTime(json['createdAt'] ?? json['created_at']),
     );
@@ -62,6 +65,29 @@ class PostModel {
   Map<String, dynamic> toCreateJson() => toJson()..remove('id');
 
   Map<String, dynamic> toUpdateJson() => toCreateJson();
+
+  PostModel copyWith({
+    int? likes,
+    int? comments,
+    bool? likedByMe,
+  }) {
+    return PostModel(
+      id: id,
+      storeId: storeId,
+      storeName: storeName,
+      categoryId: categoryId,
+      title: title,
+      description: description,
+      category: category,
+      imageUrl: imageUrl,
+      storeImageUrl: storeImageUrl,
+      likes: likes ?? this.likes,
+      comments: comments ?? this.comments,
+      likedByMe: likedByMe ?? this.likedByMe,
+      isPromotion: isPromotion,
+      createdAt: createdAt,
+    );
+  }
 
   static int _parseInt(dynamic value) {
     if (value is int) return value;

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_routes.dart';
 import '../../providers/post_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/entity_list_body.dart';
 
@@ -23,7 +24,8 @@ class _PostListScreenState extends State<PostListScreen> {
 
   Future<void> _load() async {
     try {
-      await context.read<PostProvider>().fetchAll();
+      final userId = AuthService().currentUser?.id;
+      await context.read<PostProvider>().fetchAll(userId: userId);
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
     }

@@ -7,9 +7,13 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_routes.dart';
 import '../../models/store_model.dart';
 import '../../providers/post_provider.dart';
+import '../../models/post_model.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/my_store_service.dart';
+import '../../utils/ui_helpers.dart';
 import '../../widgets/post_card.dart';
+import '../../widgets/post_comments_sheet.dart';
 import '../posts/owner_post_form_screen.dart';
 import '../store/store_profile_screen.dart';
 
@@ -50,7 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadPosts() async {
     try {
-      await context.read<PostProvider>().fetchAll();
+      final userId = AuthService().currentUser?.id;
+      await context.read<PostProvider>().fetchAll(userId: userId);
       if (!mounted) return;
       final posts = context.read<PostProvider>().items;
       final mappedCategories = <String>{
@@ -66,6 +71,23 @@ class _HomeScreenState extends State<HomeScreen> {
     } on ApiException {
       // Erro exibido via provider.error no build
     }
+  }
+
+  Future<void> _handleLike(PostModel post) async {
+    final user = AuthService().currentUser;
+    if (user == null) {
+      showErrorSnackBar(context, 'Faça login para curtir posts.');
+      return;
+    }
+    try {
+      await context.read<PostProvider>().toggleLike(post, user.id);
+    } on ApiException catch (e) {
+      if (mounted) showErrorSnackBar(context, e.message);
+    }
+  }
+
+  Future<void> _handleComment(PostModel post) async {
+    await showPostCommentsSheet(context, post: post);
   }
 
   Future<void> _openNewPost() async {
@@ -149,10 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final post = filteredPosts[index];
                         return PostCard(
-                          storeName: post.storeName,
-                          title: post.title,
-                          description: post.description,
-                          category: post.category,
+                          post: post,
+                          onLike: () => _handleLike(post),
+                          onComment: () => _handleComment(post),
                           onTap: () {
                             Navigator.pushNamed(
                               context,
