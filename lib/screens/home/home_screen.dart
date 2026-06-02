@@ -18,8 +18,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final PostService _postService = PostService();
+  final TextEditingController _searchController = TextEditingController();
+
   bool _isLoading = true;
   String? _errorMessage;
+  String _searchQuery = '';
   List<PostModel> _posts = [];
   String selectedCategory = 'Todos';
   List<String> categories = ['Todos'];
@@ -30,14 +33,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadPosts();
   }
 
-  Future<void> _loadPosts() async {
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPosts({String? search}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final posts = await _postService.getPosts();
+      final posts = await _postService.getPosts(search: search);
       final mappedCategories = <String>{
         'Todos',
         ...posts.map((post) => post.category),
@@ -78,6 +87,44 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const HomeHeader(),
 
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: 'Buscar posts',
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                          _loadPosts(search: '');
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: AppColors.surface,
+              ),
+              textInputAction: TextInputAction.search,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              onSubmitted: (_) {
+                _loadPosts(search: _searchQuery);
+              },
+            ),
+          ),
+
           CategoryFilterBar(
             selectedCategory: selectedCategory,
             categories: categories,
@@ -85,26 +132,41 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() {
                 selectedCategory = category;
               });
+              // re-run the search with the current query when category changes
+              _loadPosts(search: _searchQuery);
             }
           ),
 
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: filteredPosts.length,
-                itemBuilder: (context, index){
-                  final post = filteredPosts[index];
-                  return PostCard(
-                    storeName: post.storeName,
-                    title: post.title,
-                    description: post.description,
-                    category: post.category);
-                },
-              )
-            ),
-          )
+          if (_isLoading)
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_errorMessage != null)
+            Expanded(
+              child: Center(
+                child: Text(_errorMessage!),
+              ),
+            )
+          else
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: filteredPosts.length,
+                  itemBuilder: (context, index){
+                    final post = filteredPosts[index];
+                    return PostCard(
+                      storeName: post.storeName,
+                      title: post.title,
+                      description: post.description,
+                      category: post.category);
+                  },
+                )
+              ),
+            )
 
         ],
       )
