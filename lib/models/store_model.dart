@@ -1,7 +1,7 @@
 class StoreModel {
-  final String id;
-  final String? ownerUserId;
-  final String? categoryId;
+  final int id;
+  final int? ownerUserId;
+  final int? categoryId;
   final String name;
   final String category;
   final String? description;
@@ -14,7 +14,7 @@ class StoreModel {
     this.ownerUserId,
     this.categoryId,
     required this.name,
-    required this.category,
+    this.category = 'Sem categoria',
     this.description,
     this.address,
     this.openingHours,
@@ -23,9 +23,9 @@ class StoreModel {
 
   factory StoreModel.fromJson(Map<String, dynamic> json) {
     return StoreModel(
-      id: json['id'].toString(),
-      ownerUserId: json['ownerUserId']?.toString(),
-      categoryId: json['categoryId']?.toString(),
+      id: _parseInt(json['id']),
+      ownerUserId: _parseNullableInt(json['ownerUserId']),
+      categoryId: _parseNullableInt(json['categoryId']),
       name: (json['name'] ?? '').toString(),
       category: (json['category'] ?? 'Sem categoria').toString(),
       description: json['description']?.toString(),
@@ -33,5 +33,43 @@ class StoreModel {
       openingHours: json['openingHours']?.toString(),
       contact: json['contact']?.toString(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      if (ownerUserId != null) 'ownerUserId': ownerUserId,
+      if (categoryId != null) 'categoryId': categoryId,
+      'name': name,
+      if (description != null) 'description': description,
+      if (address != null) 'address': address,
+      if (openingHours != null) 'openingHours': openingHours,
+      if (contact != null) 'contact': contact,
+    };
+  }
+
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'ownerUserId': ownerUserId,
+      'categoryId': categoryId,
+      'name': name,
+      if (description != null && description!.isNotEmpty) 'description': description,
+      if (address != null && address!.isNotEmpty) 'address': address,
+      if (openingHours != null && openingHours!.isNotEmpty) 'openingHours': openingHours,
+      if (contact != null && contact!.isNotEmpty) 'contact': contact,
+    };
+  }
+
+  Map<String, dynamic> toUpdateJson() => toCreateJson();
+
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
   }
 }

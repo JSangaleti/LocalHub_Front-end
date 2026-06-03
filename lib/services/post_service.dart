@@ -7,25 +7,19 @@ class PostService {
 
   final ApiService _api;
 
-  Future<List<PostModel>> getPosts({String? search}) async {
-    final queryParameters = <String, String>{};
+  Future<List<PostModel>> getPosts() async {
+    final response = await _api.get('/posts');
+    final list = _extractList(response);
+    return list.map(PostModel.fromJson).toList();
+  }
 
-    if (search != null && search.trim().isNotEmpty) {
-      queryParameters['search'] = search.trim();
+  List<Map<String, dynamic>> _extractList(dynamic response) {
+    if (response is Map<String, dynamic> && response['data'] is List) {
+      return (response['data'] as List).cast<Map<String, dynamic>>();
     }
-
-    final response = await _api.get(
-      '/posts',
-      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
-    );
-    final rawList = response is Map<String, dynamic>
-        ? (response['data'] as List<dynamic>?)
-        : response as List<dynamic>?;
-
-    if (rawList == null) {
-      throw ApiException('Resposta invalida ao carregar posts.');
+    if (response is List) {
+      return response.cast<Map<String, dynamic>>();
     }
-
-    return rawList.cast<Map<String, dynamic>>().map(PostModel.fromJson).toList();
+    return [];
   }
 }

@@ -20,6 +20,10 @@ class AuthService {
 
   UserModel? get currentUser => _currentUser;
 
+  void clearSession() {
+    _currentUser = null;
+  }
+
   Future<UserModel> login({
     required String email,
     required String password,
