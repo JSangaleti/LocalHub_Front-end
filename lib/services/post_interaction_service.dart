@@ -33,23 +33,28 @@ class PostInteractionService {
 
   final ApiService _api;
 
+  /// Curtir post
   Future<PostEngagement> likePost(int postId, int userId) async {
-    final response = await _api.post('/posts/$postId/likes', {'userId': userId});
+    final response =
+        await _api.post('/posts/$postId/likes', {'userId': userId});
     return PostEngagement.fromJson(response as Map<String, dynamic>);
   }
 
+  /// Descurtir post usando query param
   Future<PostEngagement> unlikePost(int postId, int userId) async {
     final response =
         await _api.delete('/posts/$postId/likes?userId=$userId');
     return PostEngagement.fromJson(response as Map<String, dynamic>);
   }
 
+  /// Buscar comentários de um post
   Future<List<PostCommentModel>> getComments(int postId) async {
     final response = await _api.get('/posts/$postId/comments');
     final list = _extractList(response);
     return list.map(PostCommentModel.fromJson).toList();
   }
 
+  /// Adicionar comentário
   Future<({PostCommentModel comment, PostEngagement engagement})> addComment({
     required int postId,
     required int userId,
@@ -59,12 +64,19 @@ class PostInteractionService {
       'userId': userId,
       'content': content,
     });
+
     final map = response as Map<String, dynamic>;
+
+    final engagementJson = map['engagement'] as Map<String, dynamic>? ??
+        {
+          'likes': map['likes'],
+          'comments': map['comments'],
+          'likedByMe': map['likedByMe'],
+        };
+
     return (
-      comment: PostCommentModel.fromJson(
-        map['comment'] as Map<String, dynamic>,
-      ),
-      engagement: PostEngagement.fromJson(map),
+      comment: PostCommentModel.fromJson(map['comment'] as Map<String, dynamic>),
+      engagement: PostEngagement.fromJson(engagementJson),
     );
   }
 
@@ -79,6 +91,7 @@ class PostInteractionService {
   }
 }
 
+/// Extensão para atualizar PostModel com engajamento
 extension PostEngagementApply on PostModel {
   PostModel applyEngagement(PostEngagement engagement) {
     return copyWith(

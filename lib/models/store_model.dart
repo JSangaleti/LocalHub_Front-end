@@ -3,6 +3,7 @@ class StoreModel {
   final int? ownerUserId;
   final int? categoryId;
   final String name;
+  final String? cnpj;
   final String category;
   final String? description;
   final String? address;
@@ -14,6 +15,7 @@ class StoreModel {
     this.ownerUserId,
     this.categoryId,
     required this.name,
+    this.cnpj,
     this.category = 'Sem categoria',
     this.description,
     this.address,
@@ -27,6 +29,7 @@ class StoreModel {
       ownerUserId: _parseNullableInt(json['ownerUserId']),
       categoryId: _parseNullableInt(json['categoryId']),
       name: (json['name'] ?? '').toString(),
+      cnpj: json['cnpj']?.toString(),
       category: (json['category'] ?? 'Sem categoria').toString(),
       description: json['description']?.toString(),
       address: json['address']?.toString(),
@@ -41,6 +44,7 @@ class StoreModel {
       if (ownerUserId != null) 'ownerUserId': ownerUserId,
       if (categoryId != null) 'categoryId': categoryId,
       'name': name,
+      if (cnpj != null && cnpj!.isNotEmpty) 'cnpj': cnpj,
       if (description != null) 'description': description,
       if (address != null) 'address': address,
       if (openingHours != null) 'openingHours': openingHours,
@@ -53,6 +57,7 @@ class StoreModel {
       'ownerUserId': ownerUserId,
       'categoryId': categoryId,
       'name': name,
+      if (cnpj != null && cnpj!.isNotEmpty) 'cnpj': cnpj,
       if (description != null && description!.isNotEmpty) 'description': description,
       if (address != null && address!.isNotEmpty) 'address': address,
       if (openingHours != null && openingHours!.isNotEmpty) 'openingHours': openingHours,

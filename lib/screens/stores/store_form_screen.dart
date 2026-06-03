@@ -5,6 +5,7 @@ import '../../models/category_model.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
+import '../../utils/cnpj_utils.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/category_dropdown_field.dart';
 import '../../services/auth_service.dart';
@@ -22,6 +23,7 @@ class StoreFormScreen extends StatefulWidget {
 class _StoreFormScreenState extends State<StoreFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _ownerIdController = TextEditingController();
+  final _cnpjController = TextEditingController();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
@@ -103,6 +105,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       if (!mounted) return;
       _ownerIdController.text = store.ownerUserId?.toString() ?? '';
       _selectedCategoryId = store.categoryId;
+      _cnpjController.text = formatCnpj(store.cnpj ?? '');
       _nameController.text = store.name;
       _descriptionController.text = store.description ?? '';
       _addressController.text = store.address ?? '';
@@ -118,6 +121,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   @override
   void dispose() {
     _ownerIdController.dispose();
+    _cnpjController.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
@@ -130,6 +134,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     return {
       'ownerUserId': int.parse(_ownerIdController.text.trim()),
       'categoryId': _selectedCategoryId,
+      'cnpj': normalizeCnpj(_cnpjController.text),
       'name': _nameController.text.trim(),
       if (_descriptionController.text.trim().isNotEmpty)
         'description': _descriptionController.text.trim(),
@@ -240,6 +245,15 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                       value: _selectedCategoryId,
                       onChanged: (id) =>
                           setState(() => _selectedCategoryId = id),
+                    ),
+                    const SizedBox(height: 12),
+                    CustomTextField(
+                      label: 'CNPJ',
+                      controller: _cnpjController,
+                      keyboardType: TextInputType.number,
+                      hintText: '00.000.000/0000-00',
+                      inputFormatters: [CnpjInputFormatter()],
+                      validator: (v) => validateCnpjField(v),
                     ),
                     const SizedBox(height: 12),
                     CustomTextField(
