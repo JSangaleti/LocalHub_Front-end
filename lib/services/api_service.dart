@@ -37,9 +37,12 @@ class ApiService {
   })  : baseUrl = baseUrl ?? _resolveDefaultBaseUrl(),
         _client = client ?? http.Client();
 
-  Future<dynamic> get(String path) async {
+  Future<dynamic> get(String path, {Map<String, String>? queryParameters}) async {
     try {
-      final uri = Uri.parse('$baseUrl$path');
+      var uri = Uri.parse('$baseUrl$path');
+      if (queryParameters != null && queryParameters.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParameters);
+      }
       final response = await _client.get(uri);
       return _decodeResponse(response);
     } on ApiException {
