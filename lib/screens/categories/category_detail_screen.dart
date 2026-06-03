@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../models/category_model.dart';
 import '../../providers/category_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/detail_widgets.dart';
+import '../../widgets/entity_list_body.dart';
 
 class CategoryDetailScreen extends StatefulWidget {
   const CategoryDetailScreen({super.key});
@@ -61,8 +66,9 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalhes da categoria'),
+      backgroundColor: AppColors.background,
+      appBar: AppHeader(
+        title: 'Detalhes da categoria',
         actions: [
           if (_category != null)
             IconButton(
@@ -78,29 +84,38 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
             ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _category == null
-              ? const Center(child: Text('Categoria não encontrada.'))
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        _category!.name,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      Text('ID: ${_category!.id}'),
-                      const Spacer(),
-                      OutlinedButton.icon(
-                        onPressed: _delete,
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Excluir categoria'),
-                      ),
-                    ],
-                  ),
+      body: DetailBody(
+        isLoading: _isLoading,
+        isEmpty: _category == null,
+        emptyMessage: 'Categoria não encontrada.',
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: DetailHeroCard(
+                  title: _category!.name,
+                  subtitle: 'Categoria de negócio',
+                  icon: Icons.grid_view_rounded,
+                  badges: [
+                    DetailBadge(label: 'ID ${_category!.id}'),
+                  ],
                 ),
+              ),
+            ),
+            StickyBottomActions(
+              children: [
+                CustomButton(
+                  text: 'Excluir categoria',
+                  variant: CustomButtonVariant.destructive,
+                  icon: Icons.delete_outline,
+                  onPressed: _delete,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/detail_widgets.dart';
 
 class UserFormScreen extends StatefulWidget {
   const UserFormScreen({super.key});
@@ -107,75 +110,86 @@ class _UserFormScreenState extends State<UserFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEdit ? 'Editar usuário' : 'Novo usuário'),
+      backgroundColor: AppColors.background,
+      appBar: AppHeader(
+        title: _isEdit ? 'Editar usuário' : 'Novo usuário',
       ),
       body: _isLoading && _isEdit && _nameController.text.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: FormSection(
+                        title: 'Informações do usuário',
+                        children: [
+                          CustomTextField(
+                            label: 'Nome',
+                            controller: _nameController,
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          CustomTextField(
+                            label: 'E-mail',
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'E-mail obrigatório';
+                              }
+                              if (!v.contains('@')) return 'E-mail inválido';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          CustomTextField(
+                            label: _isEdit ? 'Nova senha (opcional)' : 'Senha',
+                            controller: _passwordController,
+                            obscureText: true,
+                            validator: (v) {
+                              if (!_isEdit && (v == null || v.length < 6)) {
+                                return 'Senha deve ter pelo menos 6 caracteres';
+                              }
+                              if (_isEdit && v != null && v.isNotEmpty && v.length < 6) {
+                                return 'Senha deve ter pelo menos 6 caracteres';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _userType,
+                            decoration: const InputDecoration(labelText: 'Tipo de usuário'),
+                            items: (_isEdit && _userType == 'admin'
+                                    ? ['admin', ..._userTypesClienteComercio]
+                                    : _userTypesClienteComercio)
+                                .map(
+                                  (t) => DropdownMenuItem(value: t, child: Text(t)),
+                                )
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) setState(() => _userType = v);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                StickyBottomActions(
                   children: [
-                    CustomTextField(
-                      label: 'Nome',
-                      controller: _nameController,
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'E-mail',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'E-mail obrigatório';
-                        }
-                        if (!v.contains('@')) return 'E-mail inválido';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: _isEdit ? 'Nova senha (opcional)' : 'Senha',
-                      controller: _passwordController,
-                      obscureText: true,
-                      validator: (v) {
-                        if (!_isEdit && (v == null || v.length < 6)) {
-                          return 'Senha deve ter pelo menos 6 caracteres';
-                        }
-                        if (_isEdit && v != null && v.isNotEmpty && v.length < 6) {
-                          return 'Senha deve ter pelo menos 6 caracteres';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: _userType,
-                      decoration: const InputDecoration(labelText: 'Tipo de usuário'),
-                      items: (_isEdit && _userType == 'admin'
-                              ? ['admin', ..._userTypesClienteComercio]
-                              : _userTypesClienteComercio)
-                          .map(
-                            (t) => DropdownMenuItem(value: t, child: Text(t)),
-                          )
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) setState(() => _userType = v);
-                      },
-                    ),
-                    const SizedBox(height: 24),
                     CustomButton(
-                      text: _isEdit ? 'Salvar alterações' : 'Cadastrar',
+                      text: _isEdit ? 'Salvar alterações' : 'Cadastrar usuário',
                       isLoading: _isLoading,
                       onPressed: _save,
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
     );
   }

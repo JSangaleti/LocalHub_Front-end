@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../models/category_model.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/cnpj_utils.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/category_dropdown_field.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/detail_widgets.dart';
+import '../../widgets/empty_state.dart';
 import 'store_form_route_args.dart';
 
 class StoreFormScreen extends StatefulWidget {
@@ -182,116 +186,123 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   Widget build(BuildContext context) {
     if (_loadingCategories) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'Editar loja' : 'Nova loja')),
+        appBar: AppHeader(title: _isEdit ? 'Editar loja' : 'Nova loja'),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_categories.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'Editar loja' : 'Nova loja')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Cadastre ao menos uma categoria antes de criar uma loja.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _loadCategories,
-                  child: const Text('Recarregar categorias'),
-                ),
-              ],
-            ),
-          ),
+        appBar: AppHeader(title: _isEdit ? 'Editar loja' : 'Nova loja'),
+        body: EmptyState(
+          icon: Icons.category_outlined,
+          title: 'Nenhuma categoria disponível',
+          subtitle: 'Cadastre ao menos uma categoria antes de criar uma loja.',
+          actionLabel: 'Recarregar categorias',
+          onAction: _loadCategories,
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Editar loja' : 'Nova loja')),
+      backgroundColor: AppColors.background,
+      appBar: AppHeader(title: _isEdit ? 'Editar loja' : 'Nova loja'),
       body: _isLoading && _isEdit && _nameController.text.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    if (!_lockOwnerId)
-                      CustomTextField(
-                        label: 'ID do dono (ownerUserId)',
-                        controller: _ownerIdController,
-                        keyboardType: TextInputType.number,
-                        validator: (v) => _requiredIntValidator(v, 'Dono'),
-                      )
-                    else
-                      InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Dono da loja (você)',
-                        ),
-                        child: Text(
-                          _ownerIdController.text,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          FormSection(
+                            title: 'Dados da loja',
+                            children: [
+                              if (!_lockOwnerId)
+                                CustomTextField(
+                                  label: 'ID do dono (ownerUserId)',
+                                  controller: _ownerIdController,
+                                  keyboardType: TextInputType.number,
+                                  validator: (v) => _requiredIntValidator(v, 'Dono'),
+                                )
+                              else
+                                InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Dono da loja (você)',
+                                  ),
+                                  child: Text(
+                                    _ownerIdController.text,
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              const SizedBox(height: 16),
+                              CategoryDropdownField(
+                                categories: _categories,
+                                value: _selectedCategoryId,
+                                onChanged: (id) =>
+                                    setState(() => _selectedCategoryId = id),
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'CNPJ',
+                                controller: _cnpjController,
+                                keyboardType: TextInputType.number,
+                                hintText: '00.000.000/0000-00',
+                                inputFormatters: [CnpjInputFormatter()],
+                                validator: (v) => validateCnpjField(v),
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Nome da loja',
+                                controller: _nameController,
+                                validator: (v) =>
+                                    v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Descrição',
+                                controller: _descriptionController,
+                                maxLines: 3,
+                              ),
+                            ],
+                          ),
+                          FormSection(
+                            title: 'Localização e contato',
+                            children: [
+                              CustomTextField(
+                                label: 'Endereço',
+                                controller: _addressController,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Horário de funcionamento',
+                                controller: _hoursController,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Contato',
+                                controller: _contactController,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    const SizedBox(height: 12),
-                    CategoryDropdownField(
-                      categories: _categories,
-                      value: _selectedCategoryId,
-                      onChanged: (id) =>
-                          setState(() => _selectedCategoryId = id),
                     ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'CNPJ',
-                      controller: _cnpjController,
-                      keyboardType: TextInputType.number,
-                      hintText: '00.000.000/0000-00',
-                      inputFormatters: [CnpjInputFormatter()],
-                      validator: (v) => validateCnpjField(v),
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Nome da loja',
-                      controller: _nameController,
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Descrição',
-                      controller: _descriptionController,
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Endereço',
-                      controller: _addressController,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Horário de funcionamento',
-                      controller: _hoursController,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Contato',
-                      controller: _contactController,
-                    ),
-                    const SizedBox(height: 24),
+                  ),
+                ),
+                StickyBottomActions(
+                  children: [
                     CustomButton(
-                      text: _isEdit ? 'Salvar' : 'Cadastrar',
+                      text: _isEdit ? 'Salvar alterações' : 'Cadastrar loja',
                       isLoading: _isLoading,
                       onPressed: _save,
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
     );
   }

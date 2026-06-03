@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_colors.dart';
+import '../core/constants/app_decorations.dart';
 import '../core/constants/app_routes.dart';
 import '../services/auth_service.dart';
 import '../screens/stores/store_form_route_args.dart';
@@ -24,24 +25,57 @@ class HomeHeader extends StatelessWidget {
 
     return Container(
       color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: SafeArea(
         bottom: false,
         child: Row(
           children: [
-            Image.asset(
-              'assets/images/logo_localhub.png',
-              height: 42,
-              fit: BoxFit.contain,
+            ClipRRect(
+              borderRadius: AppDecorations.borderRadiusMd,
+              child: Image.asset(
+                'assets/images/logo_localhub.png',
+                height: 40,
+                fit: BoxFit.contain,
+              ),
             ),
-            const SizedBox(width: 8),
-            const Spacer(),
-            IconButton(
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'LocalHub',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                  ),
+                  Text(
+                    'Descubra perto de você',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            _HeaderIconButton(
+              icon: Icons.notifications_none_rounded,
               onPressed: () {},
-              icon: const Icon(Icons.search),
             ),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.view_headline),
+              icon: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceAlt,
+                  borderRadius: AppDecorations.borderRadiusMd,
+                ),
+                child: const Icon(Icons.menu_rounded, size: 20),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppDecorations.borderRadiusMd,
+              ),
+              offset: const Offset(0, 48),
               onSelected: (value) async {
                 if (!context.mounted) return;
                 if (value == 'admin') {
@@ -62,9 +96,7 @@ class HomeHeader extends StatelessWidget {
                   await Navigator.pushNamed(
                     context,
                     AppRoutes.storeProfile,
-                    arguments: StoreProfileRouteArgs(
-                      ownerUserId: user.id,
-                    ),
+                    arguments: StoreProfileRouteArgs(ownerUserId: user.id),
                   );
                   if (!context.mounted) return;
                   onStoreChanged?.call();
@@ -80,27 +112,74 @@ class HomeHeader extends StatelessWidget {
                 if (isLoggedIn)
                   const PopupMenuItem(
                     value: 'create_store',
-                    child: Text('Criar loja'),
+                    child: _MenuRow(icon: Icons.add_business_outlined, label: 'Criar loja'),
                   ),
                 if (hasStore)
                   const PopupMenuItem(
                     value: 'my_store',
-                    child: Text('Minha loja'),
+                    child: _MenuRow(icon: Icons.storefront_outlined, label: 'Minha loja'),
                   ),
                 if (isAdmin)
                   const PopupMenuItem(
                     value: 'admin',
-                    child: Text('Gerenciar dados'),
+                    child: _MenuRow(icon: Icons.admin_panel_settings_outlined, label: 'Gerenciar dados'),
                   ),
+                const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'logout',
-                  child: Text('Sair'),
+                  child: _MenuRow(icon: Icons.logout_rounded, label: 'Sair', destructive: true),
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _HeaderIconButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceAlt,
+          borderRadius: AppDecorations.borderRadiusMd,
+        ),
+        child: Icon(icon, size: 20),
+      ),
+    );
+  }
+}
+
+class _MenuRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool destructive;
+
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = destructive ? AppColors.error : AppColors.textPrimary;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

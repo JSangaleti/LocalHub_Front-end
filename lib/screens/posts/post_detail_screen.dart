@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_decorations.dart';
 import '../../core/constants/app_routes.dart';
 import '../../models/post_model.dart';
 import '../../providers/post_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/detail_widgets.dart';
+import '../../widgets/entity_list_body.dart';
 import '../../widgets/post_comments_sheet.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -86,8 +92,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalhes do post'),
+      backgroundColor: AppColors.background,
+      appBar: AppHeader(
+        title: 'Detalhes do post',
         actions: [
           if (_post != null)
             IconButton(
@@ -103,56 +110,143 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _post == null
-              ? const Center(child: Text('Post não encontrado.'))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(_post!.title,
-                          style: Theme.of(context).textTheme.headlineSmall),
-                      Text('Loja: ${_post!.storeName}'),
-                      Text('Categoria: ${_post!.category}'),
-                      const SizedBox(height: 12),
-                      Text(_post!.description),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: _handleLike,
-                            icon: Icon(
-                              _post!.likedByMe
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: _post!.likedByMe ? Colors.red : null,
-                            ),
+      body: DetailBody(
+        isLoading: _isLoading,
+        isEmpty: _post == null,
+        emptyMessage: 'Post não encontrado.',
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_post!.imageUrl != null && _post!.imageUrl!.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: AppDecorations.borderRadiusLg,
+                        child: Image.network(
+                          _post!.imageUrl!,
+                          height: 220,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            height: 220,
+                            color: AppColors.primaryLight,
+                            child: const Icon(Icons.image_outlined, size: 48, color: AppColors.primary),
                           ),
-                          Text('${_post!.likes}'),
-                          const SizedBox(width: 16),
-                          IconButton(
-                            onPressed: _handleComment,
-                            icon: const Icon(Icons.chat_bubble_outline),
+                        ),
+                      )
+                    else
+                      Container(
+                        height: 180,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFFFF4757)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          Text('${_post!.comments}'),
-                        ],
+                          borderRadius: AppDecorations.borderRadiusLg,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.article_outlined, size: 48, color: Colors.white),
                       ),
-                      if (_post!.imageUrl != null &&
-                          _post!.imageUrl!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text('Imagem: ${_post!.imageUrl}'),
+                    const SizedBox(height: 16),
+                    Text(
+                      _post!.title,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        DetailBadge(label: _post!.category, onDark: false),
+                        DetailBadge(label: _post!.storeName, onDark: false),
                       ],
-                      const SizedBox(height: 24),
-                      OutlinedButton.icon(
-                        onPressed: _delete,
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Excluir post'),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _post!.description,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 15),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        _InteractionButton(
+                          icon: _post!.likedByMe
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          label: '${_post!.likes}',
+                          color: _post!.likedByMe ? AppColors.like : null,
+                          onPressed: _handleLike,
+                        ),
+                        const SizedBox(width: 12),
+                        _InteractionButton(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          label: '${_post!.comments}',
+                          onPressed: _handleComment,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
+            ),
+            StickyBottomActions(
+              children: [
+                CustomButton(
+                  text: 'Excluir post',
+                  variant: CustomButtonVariant.destructive,
+                  icon: Icons.delete_outline,
+                  onPressed: _delete,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  final VoidCallback onPressed;
+
+  const _InteractionButton({
+    required this.icon,
+    required this.label,
+    this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceAlt,
+      borderRadius: AppDecorations.borderRadiusFull,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: AppDecorations.borderRadiusFull,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20, color: color ?? AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: color ?? AppColors.textSecondary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

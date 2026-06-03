@@ -9,6 +9,9 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/store_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/detail_widgets.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/post_comments_sheet.dart';
 import '../../widgets/store_card.dart';
@@ -157,72 +160,102 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil da Loja')),
+      backgroundColor: AppColors.background,
+      appBar: const AppHeader(title: 'Perfil da Loja'),
       floatingActionButton: _isOwnerOfThisStore
           ? FloatingActionButton.extended(
               onPressed: _openNewPost,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: const Text('Novo post'),
             )
           : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _loadStore,
-                          child: const Text('Tentar novamente'),
-                        ),
-                      ],
-                    ),
-                  ),
+              ? EmptyState(
+                  icon: Icons.storefront_outlined,
+                  title: 'Erro ao carregar',
+                  subtitle: _errorMessage,
+                  actionLabel: 'Tentar novamente',
+                  onAction: _loadStore,
                 )
               : _store == null
-                  ? const Center(child: Text('Nenhuma loja encontrada.'))
+                  ? const EmptyState(
+                      icon: Icons.store_outlined,
+                      title: 'Nenhuma loja encontrada',
+                    )
                   : RefreshIndicator(
-                      onRefresh: () async {
-                        await _loadStore();
-                      },
+                      onRefresh: _loadStore,
+                      color: AppColors.primary,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             StoreCard(
                               name: _store!.name,
                               category: _store!.category,
-                              address: _store!.address ??
-                                  'Endereco nao informado',
+                              address: _store!.address ?? 'Endereco nao informado',
+                              hero: true,
                             ),
                             const SizedBox(height: 16),
-                            Text(
-                              _store!.description?.isNotEmpty == true
-                                  ? _store!.description!
-                                  : 'Sem descricao.',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Horario: ${_store!.openingHours ?? "Nao informado"}',
-                            ),
-                            Text(
-                              'Contato: ${_store!.contact ?? "Nao informado"}',
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.borderLight),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Sobre',
+                                    style: Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _store!.description?.isNotEmpty == true
+                                        ? _store!.description!
+                                        : 'Sem descricao.',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.textPrimary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  DetailInfoRow(
+                                    icon: Icons.schedule_rounded,
+                                    label: 'Horário',
+                                    value: _store!.openingHours ?? 'Nao informado',
+                                  ),
+                                  DetailInfoRow(
+                                    icon: Icons.phone_outlined,
+                                    label: 'Contato',
+                                    value: _store!.contact ?? 'Nao informado',
+                                  ),
+                                  DetailInfoRow(
+                                    icon: Icons.location_on_outlined,
+                                    label: 'Endereço',
+                                    value: _store!.address ?? 'Nao informado',
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 24),
-                            Text(
-                              'Publicações',
-                              style: Theme.of(context).textTheme.titleMedium,
+                            Row(
+                              children: [
+                                Text(
+                                  'Publicações',
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                const Spacer(),
+                                if (_storePosts.isNotEmpty)
+                                  Text(
+                                    '${_storePosts.length} posts',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 12),
                             if (_loadingPosts)
@@ -233,11 +266,10 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                                 ),
                               )
                             else if (_storePosts.isEmpty)
-                              const Text(
-                                'Esta loja ainda não tem posts.',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                ),
+                              const EmptyState(
+                                icon: Icons.article_outlined,
+                                title: 'Nenhum post ainda',
+                                subtitle: 'Esta loja ainda não publicou conteúdo.',
                               )
                             else
                               ListView.builder(

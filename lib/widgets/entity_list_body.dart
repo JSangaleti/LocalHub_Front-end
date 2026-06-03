@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_colors.dart';
+import 'empty_state.dart';
+import 'skeleton_loaders.dart';
 
 class EntityListBody extends StatelessWidget {
   final bool isLoading;
   final String? error;
   final bool isEmpty;
   final String emptyMessage;
+  final IconData emptyIcon;
   final VoidCallback onRetry;
   final Widget child;
 
@@ -16,6 +19,7 @@ class EntityListBody extends StatelessWidget {
     required this.error,
     required this.isEmpty,
     required this.emptyMessage,
+    this.emptyIcon = Icons.inbox_outlined,
     required this.onRetry,
     required this.child,
   });
@@ -23,38 +27,53 @@ class EntityListBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading && isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const ListSkeleton();
     }
 
     if (error != null && isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: onRetry,
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
+      return ErrorState(message: error!, onRetry: onRetry);
+    }
+
+    if (isEmpty) {
+      return EmptyState(
+        icon: emptyIcon,
+        title: emptyMessage,
+        subtitle: 'Comece adicionando um novo item.',
+        actionLabel: 'Atualizar',
+        onAction: onRetry,
+      );
+    }
+
+    return child;
+  }
+}
+
+class DetailBody extends StatelessWidget {
+  final bool isLoading;
+  final bool isEmpty;
+  final String emptyMessage;
+  final Widget child;
+
+  const DetailBody({
+    super.key,
+    required this.isLoading,
+    required this.isEmpty,
+    required this.emptyMessage,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
     if (isEmpty) {
-      return Center(
-        child: Text(
-          emptyMessage,
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
+      return EmptyState(
+        icon: Icons.search_off_rounded,
+        title: emptyMessage,
       );
     }
 

@@ -5,6 +5,8 @@ import '../../core/constants/app_routes.dart';
 import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/admin_entity_card.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/entity_list_body.dart';
 
 class UserListScreen extends StatefulWidget {
@@ -41,10 +43,10 @@ class _UserListScreenState extends State<UserListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Usuários')),
+      appBar: const AppHeader(title: 'Usuários'),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openForm(),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
       body: Consumer<UserProvider>(
         builder: (context, provider, _) {
@@ -53,28 +55,26 @@ class _UserListScreenState extends State<UserListScreen> {
             error: provider.error,
             isEmpty: provider.items.isEmpty,
             emptyMessage: 'Nenhum usuário cadastrado.',
+            emptyIcon: Icons.people_outline_rounded,
             onRetry: _load,
             child: RefreshIndicator(
               onRefresh: _load,
-              child: ListView.builder(
+              child: ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: provider.items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final user = provider.items[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(user.name),
-                      subtitle: Text('${user.email} • ${user.userType}'),
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.userDetail,
-                        arguments: user.id,
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => _openForm(id: user.id),
-                      ),
+                  return AdminEntityCard(
+                    title: user.name,
+                    subtitle: '${user.email} • ${user.userType}',
+                    icon: Icons.person_outline_rounded,
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.userDetail,
+                      arguments: user.id,
                     ),
+                    onEdit: () => _openForm(id: user.id),
                   );
                 },
               ),

@@ -7,8 +7,11 @@ import '../../providers/post_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/detail_widgets.dart';
+import '../../widgets/empty_state.dart';
 
 class PostFormScreen extends StatefulWidget {
   const PostFormScreen({super.key});
@@ -162,121 +165,119 @@ class _PostFormScreenState extends State<PostFormScreen> {
   Widget build(BuildContext context) {
     if (_loadingStores) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'Editar post' : 'Novo post')),
+        appBar: AppHeader(title: _isEdit ? 'Editar post' : 'Novo post'),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_stores.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text(_isEdit ? 'Editar post' : 'Novo post')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Cadastre ao menos uma loja antes de criar um post.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _loadStores,
-                  child: const Text('Recarregar lojas'),
-                ),
-              ],
-            ),
-          ),
+        appBar: AppHeader(title: _isEdit ? 'Editar post' : 'Novo post'),
+        body: EmptyState(
+          icon: Icons.storefront_outlined,
+          title: 'Nenhuma loja disponível',
+          subtitle: 'Cadastre ao menos uma loja antes de criar um post.',
+          actionLabel: 'Recarregar lojas',
+          onAction: _loadStores,
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Editar post' : 'Novo post')),
+      backgroundColor: AppColors.background,
+      appBar: AppHeader(title: _isEdit ? 'Editar post' : 'Novo post'),
       body: _isLoading && _isEdit && _titleController.text.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DropdownButtonFormField<int>(
-                      value: _selectedStoreId,
-                      decoration: const InputDecoration(labelText: 'Loja'),
-                      items: _stores
-                          .map(
-                            (s) => DropdownMenuItem(
-                              value: s.id,
-                              child: Text(s.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (id) {
-                        if (id == null) return;
-                        final store = _stores.firstWhere((s) => s.id == id);
-                        _applyStore(store);
-                      },
-                      validator: (v) =>
-                          v == null ? 'Selecione uma loja' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria (vinculada à loja)',
-                      ),
-                      child: Text(
-                        _linkedCategoryName,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    if (_linkedCategoryId == null && _selectedStoreId != null)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Esta loja não possui categoria vinculada.',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: FormSection(
+                        title: 'Conteúdo do post',
+                        children: [
+                          DropdownButtonFormField<int>(
+                            value: _selectedStoreId,
+                            decoration: const InputDecoration(labelText: 'Loja'),
+                            items: _stores
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s.id,
+                                    child: Text(s.name),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (id) {
+                              if (id == null) return;
+                              final store = _stores.firstWhere((s) => s.id == id);
+                              _applyStore(store);
+                            },
+                            validator: (v) =>
+                                v == null ? 'Selecione uma loja' : null,
                           ),
-                        ),
+                          const SizedBox(height: 16),
+                          InputDecorator(
+                            decoration: const InputDecoration(
+                              labelText: 'Categoria (vinculada à loja)',
+                            ),
+                            child: Text(
+                              _linkedCategoryName,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (_linkedCategoryId == null && _selectedStoreId != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Esta loja não possui categoria vinculada.',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.warning,
+                                    ),
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          CustomTextField(
+                            label: 'Título',
+                            controller: _titleController,
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty ? 'Título obrigatório' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          CustomTextField(
+                            label: 'Descrição',
+                            controller: _descriptionController,
+                            maxLines: 4,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Descrição obrigatória'
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          CustomTextField(
+                            label: 'URL da imagem (opcional)',
+                            controller: _imageUrlController,
+                            keyboardType: TextInputType.url,
+                            hintText: 'https://...',
+                          ),
+                        ],
                       ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Título',
-                      controller: _titleController,
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Título obrigatório' : null,
                     ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'Descrição',
-                      controller: _descriptionController,
-                      maxLines: 4,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Descrição obrigatória'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: 'URL da imagem (opcional)',
-                      controller: _imageUrlController,
-                      keyboardType: TextInputType.url,
-                    ),
-                    const SizedBox(height: 24),
+                  ),
+                ),
+                StickyBottomActions(
+                  children: [
                     CustomButton(
-                      text: _isEdit ? 'Salvar' : 'Cadastrar',
+                      text: _isEdit ? 'Salvar alterações' : 'Publicar post',
                       isLoading: _isLoading,
                       onPressed: _save,
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
     );
   }

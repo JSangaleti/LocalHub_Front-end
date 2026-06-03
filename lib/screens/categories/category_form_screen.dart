@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../providers/category_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/detail_widgets.dart';
 
 class CategoryFormScreen extends StatefulWidget {
   const CategoryFormScreen({super.key});
@@ -84,33 +87,44 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEdit ? 'Editar categoria' : 'Nova categoria'),
+      backgroundColor: AppColors.background,
+      appBar: AppHeader(
+        title: _isEdit ? 'Editar categoria' : 'Nova categoria',
       ),
       body: _isLoading && _isEdit && _nameController.text.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    CustomTextField(
-                      label: 'Nome',
-                      controller: _nameController,
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Nome obrigatório'
-                          : null,
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: FormSection(
+                        title: 'Informações da categoria',
+                        children: [
+                          CustomTextField(
+                            label: 'Nome',
+                            controller: _nameController,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Nome obrigatório'
+                                : null,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                ),
+                StickyBottomActions(
+                  children: [
                     CustomButton(
-                      text: _isEdit ? 'Salvar' : 'Cadastrar',
+                      text: _isEdit ? 'Salvar alterações' : 'Cadastrar categoria',
                       isLoading: _isLoading,
                       onPressed: _save,
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
     );
   }

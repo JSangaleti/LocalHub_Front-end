@@ -5,6 +5,8 @@ import '../../core/constants/app_routes.dart';
 import '../../providers/category_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/admin_entity_card.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/entity_list_body.dart';
 
 class CategoryListScreen extends StatefulWidget {
@@ -41,10 +43,10 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Categorias')),
+      appBar: const AppHeader(title: 'Categorias'),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openForm(),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
       body: Consumer<CategoryProvider>(
         builder: (context, provider, _) {
@@ -53,28 +55,26 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
             error: provider.error,
             isEmpty: provider.items.isEmpty,
             emptyMessage: 'Nenhuma categoria cadastrada.',
+            emptyIcon: Icons.grid_view_rounded,
             onRetry: _load,
             child: RefreshIndicator(
               onRefresh: _load,
-              child: ListView.builder(
+              child: ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: provider.items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final item = provider.items[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(item.name),
-                      subtitle: Text('ID: ${item.id}'),
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.categoryDetail,
-                        arguments: item.id,
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => _openForm(id: item.id),
-                      ),
+                  return AdminEntityCard(
+                    title: item.name,
+                    subtitle: 'ID: ${item.id}',
+                    icon: Icons.category_outlined,
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.categoryDetail,
+                      arguments: item.id,
                     ),
+                    onEdit: () => _openForm(id: item.id),
                   );
                 },
               ),

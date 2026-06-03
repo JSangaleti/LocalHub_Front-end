@@ -38,6 +38,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
+        alignLabelWithHint: maxLines != null && maxLines! > 1,
       ),
     );
   }

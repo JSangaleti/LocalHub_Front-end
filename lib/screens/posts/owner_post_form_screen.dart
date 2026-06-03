@@ -8,8 +8,10 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/store_service.dart';
 import '../../utils/ui_helpers.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/detail_widgets.dart';
 
 /// Formulário de post para usuário que possui uma loja cadastrada.
 class OwnerPostFormScreen extends StatefulWidget {
@@ -106,66 +108,77 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo post')),
+      backgroundColor: AppColors.background,
+      appBar: const AppHeader(title: 'Novo post'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _store == null
               ? const SizedBox.shrink()
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+              : Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              FormSection(
+                                title: 'Publicar para ${_store!.name}',
+                                children: [
+                                  InputDecorator(
+                                    decoration: const InputDecoration(labelText: 'Loja'),
+                                    child: Text(
+                                      _store!.name,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  InputDecorator(
+                                    decoration: const InputDecoration(
+                                      labelText: 'Categoria (da sua loja)',
+                                    ),
+                                    child: Text(
+                                      _store!.category,
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomTextField(
+                                    label: 'Título',
+                                    controller: _titleController,
+                                    validator: (v) => v == null || v.trim().isEmpty
+                                        ? 'Título obrigatório'
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomTextField(
+                                    label: 'Descrição',
+                                    controller: _descriptionController,
+                                    maxLines: 4,
+                                    validator: (v) => v == null || v.trim().isEmpty
+                                        ? 'Descrição obrigatória'
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomTextField(
+                                    label: 'URL da imagem (opcional)',
+                                    controller: _imageUrlController,
+                                    keyboardType: TextInputType.url,
+                                    hintText: 'https://...',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    StickyBottomActions(
                       children: [
-                        InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Loja',
-                          ),
-                          child: Text(
-                            _store!.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Categoria (da sua loja)',
-                          ),
-                          child: Text(
-                            _store!.category,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          label: 'Título',
-                          controller: _titleController,
-                          validator: (v) => v == null || v.trim().isEmpty
-                              ? 'Título obrigatório'
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          label: 'Descrição',
-                          controller: _descriptionController,
-                          maxLines: 4,
-                          validator: (v) => v == null || v.trim().isEmpty
-                              ? 'Descrição obrigatória'
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          label: 'URL da imagem (opcional)',
-                          controller: _imageUrlController,
-                          keyboardType: TextInputType.url,
-                        ),
-                        const SizedBox(height: 24),
                         CustomButton(
                           text: 'Publicar',
                           isLoading: _isSaving,
@@ -173,7 +186,7 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
     );
   }
