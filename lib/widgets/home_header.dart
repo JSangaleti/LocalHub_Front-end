@@ -11,11 +11,7 @@ class HomeHeader extends StatelessWidget {
   final bool hasStore;
   final VoidCallback? onStoreChanged;
 
-  const HomeHeader({
-    super.key,
-    required this.hasStore,
-    this.onStoreChanged,
-  });
+  const HomeHeader({super.key, required this.hasStore, this.onStoreChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +43,10 @@ class HomeHeader extends StatelessWidget {
                   Text(
                     'LocalHub',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                   Text(
                     'Descubra perto de você',
@@ -61,7 +57,8 @@ class HomeHeader extends StatelessWidget {
             ),
             _HeaderIconButton(
               icon: Icons.notifications_none_rounded,
-              onPressed: () {},
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRoutes.notifications),
             ),
             PopupMenuButton<String>(
               icon: Container(
@@ -112,22 +109,35 @@ class HomeHeader extends StatelessWidget {
                 if (isLoggedIn)
                   const PopupMenuItem(
                     value: 'create_store',
-                    child: _MenuRow(icon: Icons.add_business_outlined, label: 'Criar loja'),
+                    child: _MenuRow(
+                      icon: Icons.add_business_outlined,
+                      label: 'Criar loja',
+                    ),
                   ),
                 if (hasStore)
                   const PopupMenuItem(
                     value: 'my_store',
-                    child: _MenuRow(icon: Icons.storefront_outlined, label: 'Minha loja'),
+                    child: _MenuRow(
+                      icon: Icons.storefront_outlined,
+                      label: 'Minha loja',
+                    ),
                   ),
                 if (isAdmin)
                   const PopupMenuItem(
                     value: 'admin',
-                    child: _MenuRow(icon: Icons.admin_panel_settings_outlined, label: 'Gerenciar dados'),
+                    child: _MenuRow(
+                      icon: Icons.admin_panel_settings_outlined,
+                      label: 'Gerenciar dados',
+                    ),
                   ),
                 const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'logout',
-                  child: _MenuRow(icon: Icons.logout_rounded, label: 'Sair', destructive: true),
+                  child: _MenuRow(
+                    icon: Icons.logout_rounded,
+                    label: 'Sair',
+                    destructive: true,
+                  ),
                 ),
               ],
             ),
@@ -178,7 +188,10 @@ class _MenuRow extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: color),
         const SizedBox(width: 12),
-        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: TextStyle(color: color, fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }

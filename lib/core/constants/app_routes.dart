@@ -4,6 +4,7 @@ import '../../screens/admin/admin_hub_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/register_screen.dart';
 import '../../screens/auth/forgot_password_screen.dart';
+import '../../screens/notifications/notifications_screen.dart';
 import '../../screens/categories/category_detail_screen.dart';
 import '../../screens/categories/category_form_screen.dart';
 import '../../screens/categories/category_list_screen.dart';
@@ -27,6 +28,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
+  static const String notifications = '/notifications';
   static const String home = '/home';
   static const String storeProfile = '/store-profile';
   static const String admin = '/admin';
@@ -52,6 +54,7 @@ class AppRoutes {
     login: (context) => const LoginScreen(),
     register: (context) => const RegisterScreen(),
     forgotPassword: (context) => const ForgotPasswordScreen(),
+    notifications: (context) => const NotificationsScreen(),
     home: (context) => const HomeScreen(),
     storeProfile: (context) => const StoreProfileScreen(),
     admin: (context) => const AdminHubScreen(),
