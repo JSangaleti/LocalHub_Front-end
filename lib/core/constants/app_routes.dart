@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../screens/admin/admin_hub_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/register_screen.dart';
+import '../../screens/auth/forgot_password_screen.dart';
 import '../../screens/categories/category_detail_screen.dart';
 import '../../screens/categories/category_form_screen.dart';
 import '../../screens/categories/category_list_screen.dart';
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String splash = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
   static const String storeProfile = '/store-profile';
   static const String admin = '/admin';
@@ -46,23 +48,24 @@ class AppRoutes {
   static const String postDetail = '/posts/detail';
 
   static Map<String, WidgetBuilder> get routes => {
-        splash: (context) => const SplashScreen(),
-        login: (context) => const LoginScreen(),
-        register: (context) => const RegisterScreen(),
-        home: (context) => const HomeScreen(),
-        storeProfile: (context) => const StoreProfileScreen(),
-        admin: (context) => const AdminHubScreen(),
-        userList: (context) => const UserListScreen(),
-        userForm: (context) => const UserFormScreen(),
-        userDetail: (context) => const UserDetailScreen(),
-        storeList: (context) => const StoreListScreen(),
-        storeForm: (context) => const StoreFormScreen(),
-        storeDetail: (context) => const StoreDetailScreen(),
-        categoryList: (context) => const CategoryListScreen(),
-        categoryForm: (context) => const CategoryFormScreen(),
-        categoryDetail: (context) => const CategoryDetailScreen(),
-        postList: (context) => const PostListScreen(),
-        postForm: (context) => const PostFormScreen(),
-        postDetail: (context) => const PostDetailScreen(),
-      };
+    splash: (context) => const SplashScreen(),
+    login: (context) => const LoginScreen(),
+    register: (context) => const RegisterScreen(),
+    forgotPassword: (context) => const ForgotPasswordScreen(),
+    home: (context) => const HomeScreen(),
+    storeProfile: (context) => const StoreProfileScreen(),
+    admin: (context) => const AdminHubScreen(),
+    userList: (context) => const UserListScreen(),
+    userForm: (context) => const UserFormScreen(),
+    userDetail: (context) => const UserDetailScreen(),
+    storeList: (context) => const StoreListScreen(),
+    storeForm: (context) => const StoreFormScreen(),
+    storeDetail: (context) => const StoreDetailScreen(),
+    categoryList: (context) => const CategoryListScreen(),
+    categoryForm: (context) => const CategoryFormScreen(),
+    categoryDetail: (context) => const CategoryDetailScreen(),
+    postList: (context) => const PostListScreen(),
+    postForm: (context) => const PostFormScreen(),
+    postDetail: (context) => const PostDetailScreen(),
+  };
 }

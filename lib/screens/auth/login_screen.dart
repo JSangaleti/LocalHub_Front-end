@@ -8,6 +8,7 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -44,21 +45,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha e-mail e senha.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Preencha e-mail e senha.')));
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      await _authService.login(
-        email: email,
-        password: password,
-      );
+      await _authService.login(email: email, password: password);
 
       if (!mounted) return;
 
@@ -66,16 +62,14 @@ class _LoginScreenState extends State<LoginScreen> {
     } on ApiException catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível realizar o login.'),
-        ),
+        const SnackBar(content: Text('Não foi possível realizar o login.')),
       );
     } finally {
       if (mounted) {
@@ -110,16 +104,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.asset(
-            'assets/images/quadrados2.png',
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset('assets/images/quadrados2.png', fit: BoxFit.cover),
         ),
 
         Positioned.fill(
-          child: Container(
-            color: Colors.black.withOpacity(0.42),
-          ),
+          child: Container(color: Colors.black.withOpacity(0.42)),
         ),
 
         SafeArea(
@@ -144,6 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   passwordController: _passwordController,
                   onLogin: _handleLogin,
                   onRegister: _goToRegister,
+                  onForgotPassword: () =>
+                      Navigator.pushNamed(context, AppRoutes.forgotPassword),
                 ),
               ),
             ),
@@ -157,25 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.asset(
-            'assets/images/quadrados.png',
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset('assets/images/quadrados.png', fit: BoxFit.cover),
         ),
 
         Positioned.fill(
-          child: Container(
-            color: Colors.black.withOpacity(0.45),
-          ),
+          child: Container(color: Colors.black.withOpacity(0.45)),
         ),
 
         SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 28,
-                vertical: 24,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -194,6 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   passwordController: _passwordController,
                   onLogin: _handleLogin,
                   onRegister: _goToRegister,
+                  onForgotPassword: () =>
+                      Navigator.pushNamed(context, AppRoutes.forgotPassword),
                 ),
               ),
             ),
@@ -212,6 +197,7 @@ class _LoginForm extends StatelessWidget {
   final TextEditingController passwordController;
   final VoidCallback onLogin;
   final VoidCallback onRegister;
+  final VoidCallback onForgotPassword;
 
   const _LoginForm({
     required this.isLoading,
@@ -219,6 +205,7 @@ class _LoginForm extends StatelessWidget {
     required this.passwordController,
     required this.onLogin,
     required this.onRegister,
+    required this.onForgotPassword,
     required this.logoWidth,
     this.compact = false,
   });
@@ -250,10 +237,7 @@ class _LoginForm extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        CustomTextField(
-          label: 'E-mail',
-          controller: emailController,
-        ),
+        CustomTextField(label: 'E-mail', controller: emailController),
 
         const SizedBox(height: 14),
 
@@ -265,16 +249,12 @@ class _LoginForm extends StatelessWidget {
 
         const SizedBox(height: 22),
 
-        CustomButton(
-          text: 'Entrar',
-          isLoading: isLoading,
-          onPressed: onLogin,
-        ),
+        CustomButton(text: 'Entrar', isLoading: isLoading, onPressed: onLogin),
 
         const SizedBox(height: 12),
 
         TextButton(
-          onPressed: null,
+          onPressed: isLoading ? null : onForgotPassword,
           child: const Text('Esqueceu a senha?'),
         ),
 
