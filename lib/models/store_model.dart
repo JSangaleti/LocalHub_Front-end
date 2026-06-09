@@ -9,6 +9,8 @@ class StoreModel {
   final String? address;
   final String? openingHours;
   final String? contact;
+  final String? profileImageUrl;
+  final bool isActive;
 
   const StoreModel({
     required this.id,
@@ -21,6 +23,8 @@ class StoreModel {
     this.address,
     this.openingHours,
     this.contact,
+    this.profileImageUrl,
+    this.isActive = true,
   });
 
   factory StoreModel.fromJson(Map<String, dynamic> json) {
@@ -35,6 +39,8 @@ class StoreModel {
       address: json['address']?.toString(),
       openingHours: json['openingHours']?.toString(),
       contact: json['contact']?.toString(),
+      profileImageUrl: json['profileImageUrl']?.toString(),
+      isActive: _parseBool(json['isActive'], defaultValue: true),
     );
   }
 
@@ -49,6 +55,8 @@ class StoreModel {
       if (address != null) 'address': address,
       if (openingHours != null) 'openingHours': openingHours,
       if (contact != null) 'contact': contact,
+      if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+      'isActive': isActive,
     };
   }
 
@@ -58,10 +66,14 @@ class StoreModel {
       'categoryId': categoryId,
       'name': name,
       if (cnpj != null && cnpj!.isNotEmpty) 'cnpj': cnpj,
-      if (description != null && description!.isNotEmpty) 'description': description,
+      if (description != null && description!.isNotEmpty)
+        'description': description,
       if (address != null && address!.isNotEmpty) 'address': address,
-      if (openingHours != null && openingHours!.isNotEmpty) 'openingHours': openingHours,
+      if (openingHours != null && openingHours!.isNotEmpty)
+        'openingHours': openingHours,
       if (contact != null && contact!.isNotEmpty) 'contact': contact,
+      if (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+        'profileImageUrl': profileImageUrl,
     };
   }
 
@@ -76,5 +88,11 @@ class StoreModel {
     if (value == null) return null;
     if (value is int) return value;
     return int.tryParse(value.toString());
+  }
+
+  static bool _parseBool(dynamic value, {bool defaultValue = false}) {
+    if (value == null) return defaultValue;
+    if (value is bool) return value;
+    return value.toString().toLowerCase() == 'true' || value.toString() == '1';
   }
 }

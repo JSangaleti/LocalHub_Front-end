@@ -13,6 +13,7 @@ class PostModel {
   final bool likedByMe;
   final bool isPromotion;
   final DateTime? createdAt;
+  final bool isActive;
 
   const PostModel({
     required this.id,
@@ -29,6 +30,7 @@ class PostModel {
     this.likedByMe = false,
     this.isPromotion = false,
     this.createdAt,
+    this.isActive = true,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -41,13 +43,17 @@ class PostModel {
       description: (json['description'] ?? '').toString(),
       category: (json['category'] ?? 'Sem categoria').toString(),
       imageUrl: json['imageUrl']?.toString(),
-      storeImageUrl: json['storeImageUrl']?.toString() ??
+      storeImageUrl:
+          json['storeImageUrl']?.toString() ??
           json['store_image_url']?.toString(),
       likes: _parseIntDefault(json['likes']),
       comments: _parseIntDefault(json['comments']),
       likedByMe: _parseBool(json['likedByMe'] ?? json['liked_by_me']),
       isPromotion: _parseBool(json['isPromotion'] ?? json['is_promotion']),
       createdAt: _parseDateTime(json['createdAt'] ?? json['created_at']),
+      isActive: json['isActive'] == null
+          ? true
+          : _parseBool(json['isActive'] ?? json['is_active']),
     );
   }
 
@@ -59,6 +65,7 @@ class PostModel {
       'description': description,
       if (categoryId != null) 'categoryId': categoryId,
       if (imageUrl != null && imageUrl!.isNotEmpty) 'imageUrl': imageUrl,
+      'isActive': isActive,
     };
   }
 
@@ -70,6 +77,7 @@ class PostModel {
     int? likes,
     int? comments,
     bool? likedByMe,
+    bool? isActive,
   }) {
     return PostModel(
       id: id,
@@ -86,6 +94,7 @@ class PostModel {
       likedByMe: likedByMe ?? this.likedByMe,
       isPromotion: isPromotion,
       createdAt: createdAt,
+      isActive: isActive ?? this.isActive,
     );
   }
 

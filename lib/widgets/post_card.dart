@@ -9,6 +9,7 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLike;
   final VoidCallback? onComment;
+  final VoidCallback? onEdit;
   final bool compact;
 
   const PostCard({
@@ -17,6 +18,7 @@ class PostCard extends StatelessWidget {
     this.onTap,
     this.onLike,
     this.onComment,
+    this.onEdit,
     this.compact = false,
   });
 
@@ -53,7 +55,8 @@ class PostCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             post.storeName,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textSecondary,
                                 ),
@@ -61,6 +64,13 @@ class PostCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (onEdit != null)
+                          IconButton(
+                            tooltip: 'Editar post',
+                            onPressed: onEdit,
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            visualDensity: VisualDensity.compact,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -149,10 +159,10 @@ class _PostImage extends StatelessWidget {
             child: Text(
               category,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 10,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
             ),
           ),
         ),
@@ -169,10 +179,10 @@ class _PostImage extends StatelessWidget {
               child: Text(
                 'Promo',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                ),
               ),
             ),
           ),
@@ -218,10 +228,10 @@ class _StoreAvatar extends StatelessWidget {
       child: Text(
         initial,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-            ),
+          color: AppColors.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
       ),
     );
   }
@@ -258,9 +268,9 @@ class _ActionChip extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: color ?? AppColors.textSecondary,
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: color ?? AppColors.textSecondary,
+                ),
               ),
             ],
           ),

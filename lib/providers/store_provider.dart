@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/store_model.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 class StoreProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
@@ -35,6 +36,7 @@ class StoreProvider extends ChangeNotifier {
   }
 
   Future<StoreModel> create(Map<String, dynamic> body) async {
+    body = {...body, 'actingUserId': AuthService().currentUser?.id};
     final response = await _api.post('/stores', body);
     final store = StoreModel.fromJson(
       (response as Map<String, dynamic>)['store'] as Map<String, dynamic>,
@@ -45,6 +47,7 @@ class StoreProvider extends ChangeNotifier {
   }
 
   Future<StoreModel> update(int id, Map<String, dynamic> body) async {
+    body = {...body, 'actingUserId': AuthService().currentUser?.id};
     final response = await _api.put('/stores/$id', body);
     final store = StoreModel.fromJson(
       (response as Map<String, dynamic>)['store'] as Map<String, dynamic>,

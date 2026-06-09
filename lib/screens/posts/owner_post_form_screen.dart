@@ -15,7 +15,10 @@ import '../../widgets/detail_widgets.dart';
 
 /// Formulário de post para usuário que possui uma loja cadastrada.
 class OwnerPostFormScreen extends StatefulWidget {
-  const OwnerPostFormScreen({super.key});
+  final int? storeId;
+  final int? postId;
+
+  const OwnerPostFormScreen({super.key, this.storeId, this.postId});
 
   @override
   State<OwnerPostFormScreen> createState() => _OwnerPostFormScreenState();
@@ -50,7 +53,8 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
     setState(() => _isLoading = true);
     try {
       final store = await _storeService.resolveForProfile(
-        ownerUserId: user.id,
+        storeId: widget.storeId,
+        ownerUserId: widget.storeId == null ? user.id : null,
       );
       if (!mounted) return;
       if (store == null) {
@@ -61,7 +65,26 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
         Navigator.pop(context);
         return;
       }
+      if (store.ownerUserId != user.id) {
+        showErrorSnackBar(context, 'Você não pode editar posts desta loja.');
+        Navigator.pop(context);
+        return;
+      }
       setState(() => _store = store);
+      if (widget.postId != null) {
+        final post = await context.read<PostProvider>().fetchById(
+          widget.postId!,
+          userId: user.id,
+        );
+        if (post.storeId != store.id) {
+          throw const ApiException(
+            'Este post não pertence à loja selecionada.',
+          );
+        }
+        _titleController.text = post.title;
+        _descriptionController.text = post.description;
+        _imageUrlController.text = post.imageUrl ?? '';
+      }
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
       if (mounted) Navigator.pop(context);
@@ -94,9 +117,16 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
       final imageUrl = _imageUrlController.text.trim();
       if (imageUrl.isNotEmpty) body['imageUrl'] = imageUrl;
 
-      await context.read<PostProvider>().create(body);
+      if (widget.postId == null) {
+        await context.read<PostProvider>().create(body);
+      } else {
+        await context.read<PostProvider>().update(widget.postId!, body);
+      }
       if (!mounted) return;
-      showSuccessSnackBar(context, 'Post publicado.');
+      showSuccessSnackBar(
+        context,
+        widget.postId == null ? 'Post publicado.' : 'Post atualizado.',
+      );
       Navigator.pop(context, true);
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
@@ -109,85 +139,93 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const AppHeader(title: 'Novo post'),
+      appBar: AppHeader(
+        title: widget.postId == null ? 'Novo post' : 'Editar post',
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _store == null
-              ? const SizedBox.shrink()
-              : Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
+          ? const SizedBox.shrink()
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          FormSection(
+                            title: 'Publicar para ${_store!.name}',
                             children: [
-                              FormSection(
-                                title: 'Publicar para ${_store!.name}',
-                                children: [
-                                  InputDecorator(
-                                    decoration: const InputDecoration(labelText: 'Loja'),
-                                    child: Text(
-                                      _store!.name,
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
-                                    ),
+                              InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Loja',
+                                ),
+                                child: Text(
+                                  _store!.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(height: 16),
-                                  InputDecorator(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Categoria (da sua loja)',
-                                    ),
-                                    child: Text(
-                                      _store!.category,
-                                      style: const TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Categoria (da sua loja)',
+                                ),
+                                child: Text(
+                                  _store!.category,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  const SizedBox(height: 16),
-                                  CustomTextField(
-                                    label: 'Título',
-                                    controller: _titleController,
-                                    validator: (v) => v == null || v.trim().isEmpty
-                                        ? 'Título obrigatório'
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  CustomTextField(
-                                    label: 'Descrição',
-                                    controller: _descriptionController,
-                                    maxLines: 4,
-                                    validator: (v) => v == null || v.trim().isEmpty
-                                        ? 'Descrição obrigatória'
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  CustomTextField(
-                                    label: 'URL da imagem (opcional)',
-                                    controller: _imageUrlController,
-                                    keyboardType: TextInputType.url,
-                                    hintText: 'https://...',
-                                  ),
-                                ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Título',
+                                controller: _titleController,
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? 'Título obrigatório'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'Descrição',
+                                controller: _descriptionController,
+                                maxLines: 4,
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? 'Descrição obrigatória'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'URL da imagem (opcional)',
+                                controller: _imageUrlController,
+                                keyboardType: TextInputType.url,
+                                hintText: 'https://...',
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                    StickyBottomActions(
-                      children: [
-                        CustomButton(
-                          text: 'Publicar',
-                          isLoading: _isSaving,
-                          onPressed: _save,
-                        ),
-                      ],
+                  ),
+                ),
+                StickyBottomActions(
+                  children: [
+                    CustomButton(
+                      text: widget.postId == null
+                          ? 'Publicar'
+                          : 'Salvar alterações',
+                      isLoading: _isSaving,
+                      onPressed: _save,
                     ),
                   ],
                 ),
+              ],
+            ),
     );
   }
 }
