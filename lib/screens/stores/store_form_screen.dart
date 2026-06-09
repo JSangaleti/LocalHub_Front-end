@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -7,6 +8,7 @@ import '../../providers/category_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/cnpj_utils.dart';
+import '../../utils/contact_utils.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/category_dropdown_field.dart';
@@ -31,15 +33,18 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
-  final _hoursController = TextEditingController();
+  final _openingHourController = TextEditingController();
+  final _openingMinuteController = TextEditingController();
+  final _closingHourController = TextEditingController();
+  final _closingMinuteController = TextEditingController();
   final _contactController = TextEditingController();
+  final _profileImageUrlController = TextEditingController();
 
   List<CategoryModel> _categories = [];
   int? _selectedCategoryId;
   bool _isLoading = false;
   bool _loadingCategories = true;
   bool _isEdit = false;
-  bool _lockOwnerId = false;
   int? _storeId;
 
   @override
@@ -66,12 +71,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       final user = AuthService().currentUser;
       if (user != null) {
         _ownerIdController.text = user.id.toString();
-        _lockOwnerId = true;
       }
       return;
     }
     _ownerIdController.text = args.ownerUserId.toString();
-    _lockOwnerId = args.lockOwnerId;
   }
 
   Future<void> _loadCategories() async {
@@ -113,8 +116,17 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       _nameController.text = store.name;
       _descriptionController.text = store.description ?? '';
       _addressController.text = store.address ?? '';
-      _hoursController.text = store.openingHours ?? '';
-      _contactController.text = store.contact ?? '';
+      _applyOpeningHours(store.openingHours);
+      _contactController.text = formatBrazilianPhone(store.contact ?? '');
+      _profileImageUrlController.text = store.profileImageUrl ?? '';
+
+      final user = AuthService().currentUser;
+      if (user == null ||
+          (user.userType != 'admin' && store.ownerUserId != user.id)) {
+        showErrorSnackBar(context, 'Apenas o dono da loja pode editá-la.');
+        Navigator.pop(context);
+        return;
+      }
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
     } finally {
@@ -129,8 +141,12 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
-    _hoursController.dispose();
+    _openingHourController.dispose();
+    _openingMinuteController.dispose();
+    _closingHourController.dispose();
+    _closingMinuteController.dispose();
     _contactController.dispose();
+    _profileImageUrlController.dispose();
     super.dispose();
   }
 
@@ -144,10 +160,11 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
         'description': _descriptionController.text.trim(),
       if (_addressController.text.trim().isNotEmpty)
         'address': _addressController.text.trim(),
-      if (_hoursController.text.trim().isNotEmpty)
-        'openingHours': _hoursController.text.trim(),
+      if (_buildOpeningHours() != null) 'openingHours': _buildOpeningHours(),
       if (_contactController.text.trim().isNotEmpty)
         'contact': _contactController.text.trim(),
+      if (_profileImageUrlController.text.trim().isNotEmpty)
+        'profileImageUrl': _profileImageUrlController.text.trim(),
     };
   }
 
@@ -176,9 +193,35 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     }
   }
 
-  String? _requiredIntValidator(String? value, String label) {
-    final parsed = int.tryParse(value?.trim() ?? '');
-    if (parsed == null || parsed <= 0) return '$label obrigatório (número válido)';
+  void _applyOpeningHours(String? value) {
+    final match = RegExp(
+      r'(\d{1,2}):(\d{2}).*?(\d{1,2}):(\d{2})',
+    ).firstMatch(value ?? '');
+    if (match == null) return;
+    _openingHourController.text = match.group(1)!;
+    _openingMinuteController.text = match.group(2)!;
+    _closingHourController.text = match.group(3)!;
+    _closingMinuteController.text = match.group(4)!;
+  }
+
+  String? _buildOpeningHours() {
+    final values = [
+      _openingHourController.text.trim(),
+      _openingMinuteController.text.trim(),
+      _closingHourController.text.trim(),
+      _closingMinuteController.text.trim(),
+    ];
+    if (values.every((value) => value.isEmpty)) return null;
+    String two(String value) => value.padLeft(2, '0');
+    return '${two(values[0])}:${two(values[1])} - '
+        '${two(values[2])}:${two(values[3])}';
+  }
+
+  String? _timeValidator(String? value, int max, String label) {
+    final parsed = int.tryParse(value ?? '');
+    if (parsed == null || parsed < 0 || parsed > max) {
+      return '$label inválido';
+    }
     return null;
   }
 
@@ -221,24 +264,6 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                           FormSection(
                             title: 'Dados da loja',
                             children: [
-                              if (!_lockOwnerId)
-                                CustomTextField(
-                                  label: 'ID do dono (ownerUserId)',
-                                  controller: _ownerIdController,
-                                  keyboardType: TextInputType.number,
-                                  validator: (v) => _requiredIntValidator(v, 'Dono'),
-                                )
-                              else
-                                InputDecorator(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Dono da loja (você)',
-                                  ),
-                                  child: Text(
-                                    _ownerIdController.text,
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              const SizedBox(height: 16),
                               CategoryDropdownField(
                                 categories: _categories,
                                 value: _selectedCategoryId,
@@ -258,14 +283,22 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                               CustomTextField(
                                 label: 'Nome da loja',
                                 controller: _nameController,
-                                validator: (v) =>
-                                    v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? 'Nome obrigatório'
+                                    : null,
                               ),
                               const SizedBox(height: 16),
                               CustomTextField(
                                 label: 'Descrição',
                                 controller: _descriptionController,
                                 maxLines: 3,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomTextField(
+                                label: 'URL da foto de perfil',
+                                controller: _profileImageUrlController,
+                                keyboardType: TextInputType.url,
+                                hintText: 'https://...',
                               ),
                             ],
                           ),
@@ -277,14 +310,32 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                                 controller: _addressController,
                               ),
                               const SizedBox(height: 16),
-                              CustomTextField(
-                                label: 'Horário de funcionamento',
-                                controller: _hoursController,
+                              _TimeFields(
+                                openingHourController: _openingHourController,
+                                openingMinuteController:
+                                    _openingMinuteController,
+                                closingHourController: _closingHourController,
+                                closingMinuteController:
+                                    _closingMinuteController,
+                                validator: _timeValidator,
                               ),
                               const SizedBox(height: 16),
                               CustomTextField(
                                 label: 'Contato',
                                 controller: _contactController,
+                                keyboardType: TextInputType.phone,
+                                hintText: '(00) 00000-0000',
+                                inputFormatters: [
+                                  BrazilianPhoneInputFormatter(),
+                                ],
+                                validator: (value) {
+                                  final length = normalizeBrazilianPhone(
+                                    value ?? '',
+                                  ).length;
+                                  return length == 11
+                                      ? null
+                                      : 'Informe DDD e celular com 11 dígitos';
+                                },
                               ),
                             ],
                           ),
@@ -304,6 +355,60 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _TimeFields extends StatelessWidget {
+  final TextEditingController openingHourController;
+  final TextEditingController openingMinuteController;
+  final TextEditingController closingHourController;
+  final TextEditingController closingMinuteController;
+  final String? Function(String?, int, String) validator;
+
+  const _TimeFields({
+    required this.openingHourController,
+    required this.openingMinuteController,
+    required this.closingHourController,
+    required this.closingMinuteController,
+    required this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget field(String label, TextEditingController controller, int max) {
+      return Expanded(
+        child: CustomTextField(
+          label: label,
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(2),
+          ],
+          validator: (value) => validator(value, max, label),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            field('Abre (hora)', openingHourController, 23),
+            const SizedBox(width: 8),
+            field('Abre (min)', openingMinuteController, 59),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            field('Fecha (hora)', closingHourController, 23),
+            const SizedBox(width: 8),
+            field('Fecha (min)', closingMinuteController, 59),
+          ],
+        ),
+      ],
     );
   }
 }
