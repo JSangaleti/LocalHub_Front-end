@@ -5,7 +5,7 @@ import 'store_service.dart';
 /// Verifica se o usuário logado possui uma loja cadastrada.
 class MyStoreService {
   MyStoreService({StoreService? storeService})
-      : _stores = storeService ?? StoreService();
+    : _stores = storeService ?? StoreService();
 
   final StoreService _stores;
 
@@ -13,5 +13,11 @@ class MyStoreService {
     final user = AuthService().currentUser;
     if (user == null) return null;
     return _stores.resolveForProfile(ownerUserId: user.id);
+  }
+
+  Future<List<StoreModel>> findStoresForCurrentUser() async {
+    final user = AuthService().currentUser;
+    if (user == null) return [];
+    return _stores.getByOwner(user.id);
   }
 }
