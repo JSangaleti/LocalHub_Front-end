@@ -27,7 +27,10 @@ class _PostListScreenState extends State<PostListScreen> {
   Future<void> _load() async {
     try {
       final userId = AuthService().currentUser?.id;
-      await context.read<PostProvider>().fetchAll(userId: userId);
+      await context.read<PostProvider>().fetchAll(
+        userId: userId,
+        includeInactive: true,
+      );
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
     }
@@ -40,6 +43,20 @@ class _PostListScreenState extends State<PostListScreen> {
       arguments: id,
     );
     if (saved == true && mounted) await _load();
+  }
+
+  Future<void> _toggleStatus(int id, bool isActive) async {
+    try {
+      await context.read<PostProvider>().update(id, {'isActive': !isActive});
+      if (!mounted) return;
+      showSuccessSnackBar(
+        context,
+        isActive ? 'Post desativado.' : 'Post reativado.',
+      );
+      await _load();
+    } on ApiException catch (e) {
+      if (mounted) showErrorSnackBar(context, e.message);
+    }
   }
 
   @override
@@ -69,7 +86,9 @@ class _PostListScreenState extends State<PostListScreen> {
                   final post = provider.items[index];
                   return AdminEntityCard(
                     title: post.title,
-                    subtitle: '${post.storeName} • ${post.category}',
+                    subtitle:
+                        '${post.storeName} • ${post.category} • '
+                        '${post.isActive ? 'Ativo' : 'Desativado'}',
                     icon: Icons.article_outlined,
                     onTap: () => Navigator.pushNamed(
                       context,
@@ -77,6 +96,8 @@ class _PostListScreenState extends State<PostListScreen> {
                       arguments: post.id,
                     ),
                     onEdit: () => _openForm(id: post.id),
+                    isActive: post.isActive,
+                    onToggleActive: () => _toggleStatus(post.id, post.isActive),
                   );
                 },
               ),

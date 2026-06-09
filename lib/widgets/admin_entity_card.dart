@@ -11,6 +11,8 @@ class AdminEntityCard extends StatelessWidget {
   final Color? iconBackground;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
+  final VoidCallback? onToggleActive;
+  final bool? isActive;
 
   const AdminEntityCard({
     super.key,
@@ -21,6 +23,8 @@ class AdminEntityCard extends StatelessWidget {
     this.iconBackground,
     this.onTap,
     this.onEdit,
+    this.onToggleActive,
+    this.isActive,
   });
 
   @override
@@ -75,8 +79,21 @@ class AdminEntityCard extends StatelessWidget {
                   color: AppColors.textTertiary,
                   onPressed: onEdit,
                   visualDensity: VisualDensity.compact,
-                )
-              else
+                ),
+              if (onToggleActive != null)
+                IconButton(
+                  tooltip: isActive == true ? 'Desativar' : 'Reativar',
+                  icon: Icon(
+                    isActive == true
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                  ),
+                  color: isActive == true ? AppColors.error : AppColors.primary,
+                  onPressed: onToggleActive,
+                  visualDensity: VisualDensity.compact,
+                ),
+              if (onEdit == null && onToggleActive == null)
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.textTertiary,
@@ -135,7 +152,10 @@ class AdminHubCard extends StatelessWidget {
                   children: [
                     Text(title, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
