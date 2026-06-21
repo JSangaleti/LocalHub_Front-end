@@ -79,6 +79,10 @@ class HomeHeader extends StatelessWidget {
                   Navigator.pushNamed(context, AppRoutes.admin);
                   return;
                 }
+                if (value == 'user_profile' && user != null) {
+                  Navigator.pushNamed(context, AppRoutes.userProfile);
+                  return;
+                }
                 if (value == 'create_store' && user != null) {
                   final saved = await Navigator.pushNamed(
                     context,
@@ -106,6 +110,14 @@ class HomeHeader extends StatelessWidget {
                 }
               },
               itemBuilder: (context) => [
+                if (isLoggedIn)
+                  const PopupMenuItem(
+                    value: 'user_profile',
+                    child: _MenuRow(
+                      icon: Icons.person_outline,
+                      label: 'Meu perfil',
+                    ),
+                  ),
                 if (isLoggedIn)
                   const PopupMenuItem(
                     value: 'create_store',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -7,16 +8,17 @@ import '../../models/category_model.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../utils/cnpj_utils.dart';
 import '../../utils/contact_utils.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/category_dropdown_field.dart';
-import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/image_picker_field.dart';
 import 'store_form_route_args.dart';
 
 class StoreFormScreen extends StatefulWidget {
@@ -38,7 +40,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   final _closingHourController = TextEditingController();
   final _closingMinuteController = TextEditingController();
   final _contactController = TextEditingController();
-  final _profileImageUrlController = TextEditingController();
+  final _api = ApiService();
+
+  XFile? _pickedImage;
+  String? _currentImageUrl;
 
   List<CategoryModel> _categories = [];
   int? _selectedCategoryId;
@@ -118,7 +123,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       _addressController.text = store.address ?? '';
       _applyOpeningHours(store.openingHours);
       _contactController.text = formatBrazilianPhone(store.contact ?? '');
-      _profileImageUrlController.text = store.profileImageUrl ?? '';
+      _currentImageUrl = store.profileImageUrl;
 
       final user = AuthService().currentUser;
       if (user == null ||
@@ -146,7 +151,6 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     _closingHourController.dispose();
     _closingMinuteController.dispose();
     _contactController.dispose();
-    _profileImageUrlController.dispose();
     super.dispose();
   }
 
@@ -163,8 +167,6 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       if (_buildOpeningHours() != null) 'openingHours': _buildOpeningHours(),
       if (_contactController.text.trim().isNotEmpty)
         'contact': _contactController.text.trim(),
-      if (_profileImageUrlController.text.trim().isNotEmpty)
-        'profileImageUrl': _profileImageUrlController.text.trim(),
     };
   }
 
@@ -175,11 +177,19 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     final provider = context.read<StoreProvider>();
 
     try {
+      int storeId;
       if (_isEdit && _storeId != null) {
         await provider.update(_storeId!, _buildBody());
+        storeId = _storeId!;
       } else {
-        await provider.create(_buildBody());
+        final created = await provider.create(_buildBody());
+        storeId = created.id;
       }
+
+      if (_pickedImage != null) {
+        await _api.uploadFile('/uploads/stores/$storeId', _pickedImage!);
+      }
+
       if (!mounted) return;
       showSuccessSnackBar(
         context,
@@ -294,11 +304,11 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                                 maxLines: 3,
                               ),
                               const SizedBox(height: 16),
-                              CustomTextField(
-                                label: 'URL da foto de perfil',
-                                controller: _profileImageUrlController,
-                                keyboardType: TextInputType.url,
-                                hintText: 'https://...',
+                              ImagePickerField(
+                                label: 'Foto de perfil (opcional)',
+                                currentImageUrl: _currentImageUrl,
+                                onChanged: (file) =>
+                                    setState(() => _pickedImage = file),
                               ),
                             ],
                           ),

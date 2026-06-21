@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -9,6 +10,7 @@ import '../../widgets/app_header.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/detail_widgets.dart';
+import '../../widgets/image_picker_field.dart';
 
 class UserFormScreen extends StatefulWidget {
   const UserFormScreen({super.key});
@@ -22,6 +24,10 @@ class _UserFormScreenState extends State<UserFormScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
+  final _api = ApiService();
+
+  XFile? _pickedImage;
+  String? _currentImageUrl;
 
   bool _isLoading = false;
   bool _isEdit = false;
@@ -55,6 +61,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
       _nameController.text = user.name;
       _emailController.text = user.email;
       _userType = user.userType;
+      setState(() => _currentImageUrl = user.profileImageUrl);
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
     } finally {
@@ -77,6 +84,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
     final provider = context.read<UserProvider>();
 
     try {
+      int userId;
       if (_isEdit && _userId != null) {
         final body = <String, dynamic>{
           'name': _nameController.text.trim(),
@@ -86,14 +94,21 @@ class _UserFormScreenState extends State<UserFormScreen> {
         final password = _passwordController.text;
         if (password.isNotEmpty) body['password'] = password;
         await provider.update(_userId!, body);
+        userId = _userId!;
       } else {
-        await provider.create(
+        final created = await provider.create(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
           userType: _userType,
         );
+        userId = created.id;
       }
+
+      if (_pickedImage != null) {
+        await _api.uploadFile('/uploads/users/$userId', _pickedImage!);
+      }
+
       if (!mounted) return;
       showSuccessSnackBar(
         context,
@@ -174,6 +189,13 @@ class _UserFormScreenState extends State<UserFormScreen> {
                             onChanged: (v) {
                               if (v != null) setState(() => _userType = v);
                             },
+                          ),
+                          const SizedBox(height: 16),
+                          ImagePickerField(
+                            label: 'Foto de perfil (opcional)',
+                            currentImageUrl: _currentImageUrl,
+                            onChanged: (file) =>
+                                setState(() => _pickedImage = file),
                           ),
                         ],
                       ),

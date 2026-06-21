@@ -1,8 +1,11 @@
+import '../services/api_service.dart';
+
 class UserModel {
   final int id;
   final String name;
   final String email;
   final String userType;
+  final String? profileImageUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -11,6 +14,7 @@ class UserModel {
     required this.name,
     required this.email,
     required this.userType,
+    this.profileImageUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -24,6 +28,7 @@ class UserModel {
       name: (json['name'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
       userType: (json['userType'] ?? 'cliente').toString(),
+      profileImageUrl: ApiService.buildImageUrl(json['profileImageUrl']?.toString()),
       createdAt: _parseDateTime(json['createdAt']),
       updatedAt: _parseDateTime(json['updatedAt']),
     );
@@ -35,14 +40,13 @@ class UserModel {
       'name': name,
       'email': email,
       'userType': userType,
+      if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     };
   }
 
-  Map<String, dynamic> toCreateJson({
-    required String password,
-  }) {
+  Map<String, dynamic> toCreateJson({required String password}) {
     return {
       'name': name,
       'email': email,

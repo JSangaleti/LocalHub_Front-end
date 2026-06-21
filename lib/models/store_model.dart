@@ -1,3 +1,5 @@
+import '../services/api_service.dart';
+
 class StoreModel {
   final int id;
   final int? ownerUserId;
@@ -39,7 +41,7 @@ class StoreModel {
       address: json['address']?.toString(),
       openingHours: json['openingHours']?.toString(),
       contact: json['contact']?.toString(),
-      profileImageUrl: json['profileImageUrl']?.toString(),
+      profileImageUrl: ApiService.buildImageUrl(json['profileImageUrl']?.toString()),
       isActive: _parseBool(json['isActive'], defaultValue: true),
     );
   }
