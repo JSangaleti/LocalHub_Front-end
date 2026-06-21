@@ -20,6 +20,7 @@ import '../../screens/stores/store_list_screen.dart';
 import '../../screens/users/user_detail_screen.dart';
 import '../../screens/users/user_form_screen.dart';
 import '../../screens/users/user_list_screen.dart';
+import '../../screens/profile/user_profile_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -36,6 +37,7 @@ class AppRoutes {
   static const String userList = '/users';
   static const String userForm = '/users/form';
   static const String userDetail = '/users/detail';
+  static const String userProfile = '/user-profile';
 
   static const String storeList = '/stores';
   static const String storeForm = '/stores/form';
@@ -61,6 +63,7 @@ class AppRoutes {
     userList: (context) => const UserListScreen(),
     userForm: (context) => const UserFormScreen(),
     userDetail: (context) => const UserDetailScreen(),
+    userProfile: (context) => const UserProfileScreen(),
     storeList: (context) => const StoreListScreen(),
     storeForm: (context) => const StoreFormScreen(),
     storeDetail: (context) => const StoreDetailScreen(),

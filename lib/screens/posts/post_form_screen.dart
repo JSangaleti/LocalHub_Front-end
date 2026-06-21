@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -12,6 +13,7 @@ import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/image_picker_field.dart';
 
 class PostFormScreen extends StatefulWidget {
   const PostFormScreen({super.key});
@@ -24,7 +26,10 @@ class _PostFormScreenState extends State<PostFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _imageUrlController = TextEditingController();
+  final _api = ApiService();
+
+  XFile? _pickedImage;
+  String? _currentImageUrl;
 
   List<StoreModel> _stores = [];
   int? _selectedStoreId;
@@ -91,7 +96,7 @@ class _PostFormScreenState extends State<PostFormScreen> {
 
       _titleController.text = post.title;
       _descriptionController.text = post.description;
-      _imageUrlController.text = post.imageUrl ?? '';
+      _currentImageUrl = post.imageUrl;
       _selectedStoreId = post.storeId;
       _linkedCategoryId = post.categoryId;
       _linkedCategoryName = post.category;
@@ -113,7 +118,6 @@ class _PostFormScreenState extends State<PostFormScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -126,8 +130,6 @@ class _PostFormScreenState extends State<PostFormScreen> {
     if (_linkedCategoryId != null) {
       body['categoryId'] = _linkedCategoryId;
     }
-    final imageUrl = _imageUrlController.text.trim();
-    if (imageUrl.isNotEmpty) body['imageUrl'] = imageUrl;
     return body;
   }
 
@@ -143,11 +145,21 @@ class _PostFormScreenState extends State<PostFormScreen> {
 
     try {
       final body = _buildBody();
+      int postId;
+
       if (_isEdit && _postId != null) {
         await provider.update(_postId!, body);
+        postId = _postId!;
       } else {
-        await provider.create(body);
+        final created = await provider.create(body);
+        postId = created.id;
       }
+
+      // Upload da imagem se uma nova foi selecionada
+      if (_pickedImage != null) {
+        await _api.uploadFile('/uploads/posts/$postId', _pickedImage!);
+      }
+
       if (!mounted) return;
       showSuccessSnackBar(
         context,
@@ -211,7 +223,8 @@ class _PostFormScreenState extends State<PostFormScreen> {
                                 .toList(),
                             onChanged: (id) {
                               if (id == null) return;
-                              final store = _stores.firstWhere((s) => s.id == id);
+                              final store =
+                                  _stores.firstWhere((s) => s.id == id);
                               _applyStore(store);
                             },
                             validator: (v) =>
@@ -230,22 +243,25 @@ class _PostFormScreenState extends State<PostFormScreen> {
                               ),
                             ),
                           ),
-                          if (_linkedCategoryId == null && _selectedStoreId != null)
+                          if (_linkedCategoryId == null &&
+                              _selectedStoreId != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
                                 'Esta loja não possui categoria vinculada.',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.warning,
-                                    ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: AppColors.warning),
                               ),
                             ),
                           const SizedBox(height: 16),
                           CustomTextField(
                             label: 'Título',
                             controller: _titleController,
-                            validator: (v) =>
-                                v == null || v.trim().isEmpty ? 'Título obrigatório' : null,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Título obrigatório'
+                                : null,
                           ),
                           const SizedBox(height: 16),
                           CustomTextField(
@@ -257,11 +273,11 @@ class _PostFormScreenState extends State<PostFormScreen> {
                                 : null,
                           ),
                           const SizedBox(height: 16),
-                          CustomTextField(
-                            label: 'URL da imagem (opcional)',
-                            controller: _imageUrlController,
-                            keyboardType: TextInputType.url,
-                            hintText: 'https://...',
+                          ImagePickerField(
+                            label: 'Imagem do post (opcional)',
+                            currentImageUrl: _currentImageUrl,
+                            onChanged: (file) =>
+                                setState(() => _pickedImage = file),
                           ),
                         ],
                       ),

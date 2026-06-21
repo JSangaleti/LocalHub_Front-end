@@ -1,3 +1,5 @@
+import '../services/api_service.dart';
+
 class PostModel {
   final int id;
   final int storeId;
@@ -42,10 +44,10 @@ class PostModel {
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
       category: (json['category'] ?? 'Sem categoria').toString(),
-      imageUrl: json['imageUrl']?.toString(),
-      storeImageUrl:
-          json['storeImageUrl']?.toString() ??
-          json['store_image_url']?.toString(),
+      imageUrl: ApiService.buildImageUrl(json['imageUrl']?.toString()),
+      storeImageUrl: ApiService.buildImageUrl(
+        json['storeImageUrl']?.toString() ?? json['store_image_url']?.toString(),
+      ),
       likes: _parseIntDefault(json['likes']),
       comments: _parseIntDefault(json['comments']),
       likedByMe: _parseBool(json['likedByMe'] ?? json['liked_by_me']),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -123,7 +124,36 @@ class ApiService {
     }
   }
 
-  // ===================== HELPERS =====================
+  Future<dynamic> uploadFile(String path, XFile file) async {
+    try {
+      final uri = Uri.parse('$baseUrl$path');
+      final request = http.MultipartRequest('POST', uri);
+      final bytes = await file.readAsBytes();
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: file.name),
+      );
+      final streamed = await _client.send(request);
+      final response = await http.Response.fromStream(streamed);
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } on http.ClientException catch (e) {
+      throw ApiException(_connectionHint(e.message));
+    } catch (e) {
+      throw ApiException(_connectionHint(e.toString()));
+    }
+  }
+
+  // Converte caminho relativo do servidor (/uploads/...) em URL absoluta.
+  // URLs já absolutas (http/https) são retornadas sem alteração.
+  static String? buildImageUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    final base = _resolveDefaultBaseUrl().replaceFirst(RegExp(r'/api$'), '');
+    return '$base$path';
+  }
+
+
   String _connectionHint(String? detail) {
     final base = 'Could not connect to API at $baseUrl.\n'
         'Make sure the backend is running (e.g., port 3000).\n'

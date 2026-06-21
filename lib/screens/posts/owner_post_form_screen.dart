@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -12,6 +13,7 @@ import '../../widgets/app_header.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/detail_widgets.dart';
+import '../../widgets/image_picker_field.dart';
 
 /// Formulário de post para usuário que possui uma loja cadastrada.
 class OwnerPostFormScreen extends StatefulWidget {
@@ -28,10 +30,12 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _imageUrlController = TextEditingController();
+  final _api = ApiService();
   final StoreService _storeService = StoreService();
 
   StoreModel? _store;
+  XFile? _pickedImage;
+  String? _currentImageUrl;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -77,13 +81,11 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
           userId: user.id,
         );
         if (post.storeId != store.id) {
-          throw const ApiException(
-            'Este post não pertence à loja selecionada.',
-          );
+          throw const ApiException('Este post não pertence à loja selecionada.');
         }
         _titleController.text = post.title;
         _descriptionController.text = post.description;
-        _imageUrlController.text = post.imageUrl ?? '';
+        _currentImageUrl = post.imageUrl;
       }
     } on ApiException catch (e) {
       if (mounted) showErrorSnackBar(context, e.message);
@@ -97,7 +99,6 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -114,14 +115,21 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
       if (_store!.categoryId != null) {
         body['categoryId'] = _store!.categoryId;
       }
-      final imageUrl = _imageUrlController.text.trim();
-      if (imageUrl.isNotEmpty) body['imageUrl'] = imageUrl;
 
+      int postId;
       if (widget.postId == null) {
-        await context.read<PostProvider>().create(body);
+        final created = await context.read<PostProvider>().create(body);
+        postId = created.id;
       } else {
         await context.read<PostProvider>().update(widget.postId!, body);
+        postId = widget.postId!;
       }
+
+      // Upload da imagem se uma nova foi selecionada
+      if (_pickedImage != null) {
+        await _api.uploadFile('/uploads/posts/$postId', _pickedImage!);
+      }
+
       if (!mounted) return;
       showSuccessSnackBar(
         context,
@@ -200,11 +208,11 @@ class _OwnerPostFormScreenState extends State<OwnerPostFormScreen> {
                                     : null,
                               ),
                               const SizedBox(height: 16),
-                              CustomTextField(
-                                label: 'URL da imagem (opcional)',
-                                controller: _imageUrlController,
-                                keyboardType: TextInputType.url,
-                                hintText: 'https://...',
+                              ImagePickerField(
+                                label: 'Imagem do post (opcional)',
+                                currentImageUrl: _currentImageUrl,
+                                onChanged: (file) =>
+                                    setState(() => _pickedImage = file),
                               ),
                             ],
                           ),
