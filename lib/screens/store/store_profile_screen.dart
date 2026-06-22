@@ -8,6 +8,7 @@ import '../../providers/post_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/favorite_store_service.dart';
 import '../../services/store_service.dart';
 import '../../core/constants/app_routes.dart';
 import '../../utils/ui_helpers.dart';
@@ -36,9 +37,12 @@ class StoreProfileScreen extends StatefulWidget {
 
 class _StoreProfileScreenState extends State<StoreProfileScreen> {
   final StoreService _storeService = StoreService();
+  final FavoriteStoreService _favoriteStoreService = FavoriteStoreService();
 
   bool _isLoading = true;
   bool _loadingPosts = false;
+  bool _isFavorite = false;
+  bool _updatingFavorite = false;
   String? _errorMessage;
   StoreModel? _store;
   List<StoreModel> _ownerStores = [];
@@ -99,6 +103,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
       if (!mounted) return;
       setState(() => _store = store);
       if (store != null) {
+        await _loadFavoriteStatus(store.id);
         await _loadPosts(store.id);
       }
     } on ApiException catch (e) {
@@ -109,6 +114,49 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
       setState(() => _errorMessage = 'Nao foi possivel carregar a loja.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadFavoriteStatus(int storeId) async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    try {
+      final favorites = await _favoriteStoreService.getAll(user.id);
+      if (!mounted || _store?.id != storeId) return;
+      setState(() => _isFavorite = favorites.any((store) => store.id == storeId));
+    } catch (_) {
+      // O perfil continua utilizável caso a consulta de favoritos falhe.
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final user = AuthService().currentUser;
+    final store = _store;
+    if (user == null || store == null || _updatingFavorite) return;
+
+    final nextValue = !_isFavorite;
+    setState(() {
+      _isFavorite = nextValue;
+      _updatingFavorite = true;
+    });
+
+    try {
+      if (nextValue) {
+        await _favoriteStoreService.add(user.id, store.id);
+      } else {
+        await _favoriteStoreService.remove(user.id, store.id);
+      }
+      if (!mounted) return;
+      showSuccessSnackBar(
+        context,
+        nextValue ? 'Loja adicionada aos favoritos.' : 'Loja removida dos favoritos.',
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _isFavorite = !nextValue);
+      showErrorSnackBar(context, e.message);
+    } finally {
+      if (mounted) setState(() => _updatingFavorite = false);
     }
   }
 
@@ -176,6 +224,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
     if (id == null || id == _store?.id) return;
     final store = _ownerStores.firstWhere((item) => item.id == id);
     setState(() => _store = store);
+    await _loadFavoriteStatus(store.id);
     await _loadPosts(store.id);
   }
 
@@ -270,6 +319,27 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                             )
                             .toList(),
                         onChanged: _selectStore,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (AuthService().currentUser != null) ...[
+                      OutlinedButton.icon(
+                        onPressed: _updatingFavorite ? null : _toggleFavorite,
+                        icon: _updatingFavorite
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                _isFavorite
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                              ),
+                        label: Text(
+                          _isFavorite
+                              ? 'Remover dos favoritos'
+                              : 'Favoritar loja',
+                        ),
                       ),
                       const SizedBox(height: 16),
                     ],

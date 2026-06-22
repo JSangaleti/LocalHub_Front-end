@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -35,10 +34,8 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
-  final _openingHourController = TextEditingController();
-  final _openingMinuteController = TextEditingController();
-  final _closingHourController = TextEditingController();
-  final _closingMinuteController = TextEditingController();
+  final _openingTimeController = TextEditingController();
+  final _closingTimeController = TextEditingController();
   final _contactController = TextEditingController();
   final _api = ApiService();
 
@@ -146,10 +143,8 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
-    _openingHourController.dispose();
-    _openingMinuteController.dispose();
-    _closingHourController.dispose();
-    _closingMinuteController.dispose();
+    _openingTimeController.dispose();
+    _closingTimeController.dispose();
     _contactController.dispose();
     super.dispose();
   }
@@ -208,32 +203,26 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       r'(\d{1,2}):(\d{2}).*?(\d{1,2}):(\d{2})',
     ).firstMatch(value ?? '');
     if (match == null) return;
-    _openingHourController.text = match.group(1)!;
-    _openingMinuteController.text = match.group(2)!;
-    _closingHourController.text = match.group(3)!;
-    _closingMinuteController.text = match.group(4)!;
+    _openingTimeController.text = _formatTime(
+      int.parse(match.group(1)!),
+      int.parse(match.group(2)!),
+    );
+    _closingTimeController.text = _formatTime(
+      int.parse(match.group(3)!),
+      int.parse(match.group(4)!),
+    );
   }
 
   String? _buildOpeningHours() {
-    final values = [
-      _openingHourController.text.trim(),
-      _openingMinuteController.text.trim(),
-      _closingHourController.text.trim(),
-      _closingMinuteController.text.trim(),
-    ];
-    if (values.every((value) => value.isEmpty)) return null;
-    String two(String value) => value.padLeft(2, '0');
-    return '${two(values[0])}:${two(values[1])} - '
-        '${two(values[2])}:${two(values[3])}';
+    final opening = _openingTimeController.text.trim();
+    final closing = _closingTimeController.text.trim();
+    if (opening.isEmpty && closing.isEmpty) return null;
+    return '$opening - $closing';
   }
 
-  String? _timeValidator(String? value, int max, String label) {
-    final parsed = int.tryParse(value ?? '');
-    if (parsed == null || parsed < 0 || parsed > max) {
-      return '$label inválido';
-    }
-    return null;
-  }
+  String _formatTime(int hour, int minute) =>
+      '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -321,13 +310,8 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                               ),
                               const SizedBox(height: 16),
                               _TimeFields(
-                                openingHourController: _openingHourController,
-                                openingMinuteController:
-                                    _openingMinuteController,
-                                closingHourController: _closingHourController,
-                                closingMinuteController:
-                                    _closingMinuteController,
-                                validator: _timeValidator,
+                                openingController: _openingTimeController,
+                                closingController: _closingTimeController,
                               ),
                               const SizedBox(height: 16),
                               CustomTextField(
@@ -370,54 +354,69 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
 }
 
 class _TimeFields extends StatelessWidget {
-  final TextEditingController openingHourController;
-  final TextEditingController openingMinuteController;
-  final TextEditingController closingHourController;
-  final TextEditingController closingMinuteController;
-  final String? Function(String?, int, String) validator;
+  final TextEditingController openingController;
+  final TextEditingController closingController;
 
   const _TimeFields({
-    required this.openingHourController,
-    required this.openingMinuteController,
-    required this.closingHourController,
-    required this.closingMinuteController,
-    required this.validator,
+    required this.openingController,
+    required this.closingController,
   });
+
+  TimeOfDay _initialTime(TextEditingController controller) {
+    final parts = controller.text.split(':');
+    if (parts.length == 2) {
+      final hour = int.tryParse(parts[0]);
+      final minute = int.tryParse(parts[1]);
+      if (hour != null && minute != null) {
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+    }
+    return TimeOfDay.now();
+  }
+
+  Future<void> _selectTime(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: _initialTime(controller),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (selected == null) return;
+    controller.text =
+        '${selected.hour.toString().padLeft(2, '0')}:'
+        '${selected.minute.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    Widget field(String label, TextEditingController controller, int max) {
+    Widget field(String label, TextEditingController controller) {
       return Expanded(
-        child: CustomTextField(
-          label: label,
+        child: TextFormField(
           controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(2),
-          ],
-          validator: (value) => validator(value, max, label),
+          readOnly: true,
+          onTap: () => _selectTime(context, controller),
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: '--:--',
+            suffixIcon: const Icon(Icons.access_time),
+          ),
+          validator: (value) => value == null || value.isEmpty
+              ? 'Selecione o ${label.toLowerCase()}'
+              : null,
         ),
       );
     }
 
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            field('Abre (hora)', openingHourController, 23),
-            const SizedBox(width: 8),
-            field('Abre (min)', openingMinuteController, 59),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            field('Fecha (hora)', closingHourController, 23),
-            const SizedBox(width: 8),
-            field('Fecha (min)', closingMinuteController, 59),
-          ],
-        ),
+        field('Horário de abertura', openingController),
+        const SizedBox(width: 12),
+        field('Horário de fechamento', closingController),
       ],
     );
   }

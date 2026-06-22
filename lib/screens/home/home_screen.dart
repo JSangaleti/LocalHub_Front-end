@@ -7,6 +7,7 @@ import '../../models/post_model.dart';
 import '../../models/store_model.dart';
 import '../../providers/post_provider.dart';
 import '../../services/auth_service.dart';
+import '../../services/favorite_store_service.dart';
 import '../../services/my_store_service.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/app_search_bar.dart';
@@ -28,11 +29,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final MyStoreService _myStoreService = MyStoreService();
+  final FavoriteStoreService _favoriteStoreService = FavoriteStoreService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   String selectedCategory = 'Todos';
-  List<String> categories = ['Todos'];
+  List<String> categories = ['Todos', 'Favoritos'];
+  Set<int> _favoriteStoreIds = {};
   StoreModel? _myStore;
   String _searchQuery = '';
 
@@ -68,10 +71,19 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final userId = AuthService().currentUser?.id;
       await context.read<PostProvider>().fetchAll(userId: userId, search: search);
+      if (userId != null) {
+        try {
+          final favorites = await _favoriteStoreService.getAll(userId);
+          _favoriteStoreIds = favorites.map((store) => store.id).toSet();
+        } catch (_) {
+          _favoriteStoreIds = {};
+        }
+      }
       if (!mounted) return;
       final posts = context.read<PostProvider>().items;
       final mappedCategories = <String>{
         'Todos',
+        'Favoritos',
         ...posts.map((post) => post.category),
       }.toList();
       setState(() {
@@ -107,12 +119,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if (saved == true && mounted) await _loadPosts(search: _searchQuery);
   }
 
-  void _openStoreProfile(PostModel post) {
-    Navigator.pushNamed(
+  Future<void> _openStoreProfile(PostModel post) async {
+    await Navigator.pushNamed(
       context,
       AppRoutes.storeProfile,
       arguments: StoreProfileRouteArgs(storeId: post.storeId),
     );
+    if (mounted) await _loadPosts(search: _searchQuery);
   }
 
   @override
@@ -120,7 +133,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final provider = context.watch<PostProvider>();
     final filteredPosts = selectedCategory == 'Todos'
         ? provider.items
-        : provider.items.where((post) => post.category == selectedCategory).toList();
+        : selectedCategory == 'Favoritos'
+        ? provider.items
+              .where((post) => _favoriteStoreIds.contains(post.storeId))
+              .toList()
+        : provider.items
+              .where((post) => post.category == selectedCategory)
+              .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -176,10 +195,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 if (filteredPosts.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.explore_outlined,
-                    title: 'Nenhum post encontrado',
-                    subtitle: 'Tente outra categoria ou termo de busca.',
+                  return EmptyState(
+                    icon: selectedCategory == 'Favoritos'
+                        ? Icons.favorite_border_rounded
+                        : Icons.explore_outlined,
+                    title: selectedCategory == 'Favoritos'
+                        ? 'Nenhuma loja favoritada'
+                        : 'Nenhum post encontrado',
+                    subtitle: selectedCategory == 'Favoritos'
+                        ? 'Favorite uma loja no perfil dela para vê-la aqui.'
+                        : 'Tente outra categoria ou termo de busca.',
                   );
                 }
 

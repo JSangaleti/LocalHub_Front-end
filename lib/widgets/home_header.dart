@@ -34,27 +34,8 @@ class HomeHeader extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
             ),
+            Spacer(),
             const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'LocalHub',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  Text(
-                    'Descubra perto de você',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
             _HeaderIconButton(
               icon: Icons.notifications_none_rounded,
               onPressed: () =>

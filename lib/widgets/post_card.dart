@@ -50,7 +50,10 @@ class PostCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        _StoreAvatar(name: post.storeName),
+                        _StoreAvatar(
+                          name: post.storeName,
+                          imageUrl: post.storeImageUrl,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -216,23 +219,32 @@ class _Placeholder extends StatelessWidget {
 
 class _StoreAvatar extends StatelessWidget {
   final String name;
+  final String? imageUrl;
 
-  const _StoreAvatar({required this.name});
+  const _StoreAvatar({required this.name, this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final fallback = Text(
+      initial,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: AppColors.primary,
+        fontWeight: FontWeight.w700,
+        fontSize: 11,
+      ),
+    );
+
     return CircleAvatar(
       radius: 12,
       backgroundColor: AppColors.primaryLight,
-      child: Text(
-        initial,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: AppColors.primary,
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
-      ),
+      foregroundImage: imageUrl != null && imageUrl!.isNotEmpty
+          ? NetworkImage(imageUrl!)
+          : null,
+      onForegroundImageError: imageUrl != null && imageUrl!.isNotEmpty
+          ? (exception, stackTrace) {}
+          : null,
+      child: fallback,
     );
   }
 }
