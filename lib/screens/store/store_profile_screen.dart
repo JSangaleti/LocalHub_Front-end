@@ -149,7 +149,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
       if (!mounted) return;
       showSuccessSnackBar(
         context,
-        nextValue ? 'Loja adicionada aos favoritos.' : 'Loja removida dos favoritos.',
+        nextValue ? 'Você está seguindo a loja.' : 'Você deixou de seguir a loja.',
       );
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -332,13 +332,11 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                               )
                             : Icon(
                                 _isFavorite
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
+                                    ? Icons.person_remove_outlined
+                                    : Icons.person_add_alt_1_outlined,
                               ),
                         label: Text(
-                          _isFavorite
-                              ? 'Remover dos favoritos'
-                              : 'Favoritar loja',
+                          _isFavorite ? 'Deixar de seguir' : 'Seguir',
                         ),
                       ),
                       const SizedBox(height: 16),

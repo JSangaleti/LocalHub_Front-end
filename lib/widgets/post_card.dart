@@ -10,6 +10,8 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onLike;
   final VoidCallback? onComment;
   final VoidCallback? onEdit;
+  final VoidCallback? onSave;
+  final bool isSaved;
   final bool compact;
 
   const PostCard({
@@ -19,6 +21,8 @@ class PostCard extends StatelessWidget {
     this.onLike,
     this.onComment,
     this.onEdit,
+    this.onSave,
+    this.isSaved = false,
     this.compact = false,
   });
 
@@ -109,6 +113,15 @@ class PostCard extends StatelessWidget {
                           label: '${post.comments}',
                           onPressed: onComment,
                         ),
+                        const Spacer(),
+                        _ActionChip(
+                          icon: isSaved
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_border_rounded,
+                          label: '',
+                          color: isSaved ? AppColors.primary : null,
+                          onPressed: onSave,
+                        ),
                       ],
                     ),
                   ],
@@ -146,7 +159,7 @@ class _PostImage extends StatelessWidget {
               ? Image.network(
                   imageUrl!,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _Placeholder(height: height),
+                  errorBuilder: (_, _, _) => _Placeholder(height: height),
                 )
               : _Placeholder(height: height),
         ),

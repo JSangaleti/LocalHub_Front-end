@@ -9,6 +9,7 @@ import '../../providers/post_provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/favorite_store_service.dart';
 import '../../services/my_store_service.dart';
+import '../../services/saved_post_service.dart';
 import '../../utils/ui_helpers.dart';
 import '../../widgets/app_search_bar.dart';
 import '../../widgets/category_filter_bar.dart';
@@ -30,12 +31,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final MyStoreService _myStoreService = MyStoreService();
   final FavoriteStoreService _favoriteStoreService = FavoriteStoreService();
+  final SavedPostService _savedPostService = SavedPostService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   String selectedCategory = 'Todos';
-  List<String> categories = ['Todos', 'Favoritos'];
+  List<String> categories = ['Todos', 'Seguindo', 'Favoritos'];
   Set<int> _favoriteStoreIds = {};
+  Set<int> _savedPostIds = {};
   StoreModel? _myStore;
   String _searchQuery = '';
 
@@ -79,19 +82,54 @@ class _HomeScreenState extends State<HomeScreen> {
           _favoriteStoreIds = {};
         }
       }
+      final currentUserId = AuthService().currentUser?.id;
+      final saved = currentUserId != null
+          ? await _savedPostService.getSavedIds(currentUserId)
+          : <int>{};
       if (!mounted) return;
       final posts = context.read<PostProvider>().items;
       final mappedCategories = <String>{
         'Todos',
+        'Seguindo',
         'Favoritos',
         ...posts.map((post) => post.category),
       }.toList();
       setState(() {
+        _savedPostIds = saved;
         categories = mappedCategories;
         if (!categories.contains(selectedCategory)) selectedCategory = 'Todos';
       });
     } catch (_) {
       // Erro tratado via provider
+    }
+  }
+
+  Future<void> _handleSave(PostModel post) async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    final alreadySaved = _savedPostIds.contains(post.id);
+    setState(() {
+      if (alreadySaved) {
+        _savedPostIds = _savedPostIds.where((id) => id != post.id).toSet();
+      } else {
+        _savedPostIds = {..._savedPostIds, post.id};
+      }
+    });
+    try {
+      if (alreadySaved) {
+        await _savedPostService.remove(user.id, post.id);
+      } else {
+        await _savedPostService.add(user.id, post.id);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        if (alreadySaved) {
+          _savedPostIds = {..._savedPostIds, post.id};
+        } else {
+          _savedPostIds = _savedPostIds.where((id) => id != post.id).toSet();
+        }
+      });
     }
   }
 
@@ -131,15 +169,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PostProvider>();
-    final filteredPosts = selectedCategory == 'Todos'
-        ? provider.items
-        : selectedCategory == 'Favoritos'
-        ? provider.items
-              .where((post) => _favoriteStoreIds.contains(post.storeId))
-              .toList()
-        : provider.items
-              .where((post) => post.category == selectedCategory)
-              .toList();
+    final filteredPosts = switch (selectedCategory) {
+      'Todos' => provider.items,
+      'Seguindo' => provider.items
+          .where((post) => _favoriteStoreIds.contains(post.storeId))
+          .toList(),
+      'Favoritos' => provider.items
+          .where((post) => _savedPostIds.contains(post.id))
+          .toList(),
+      _ => provider.items
+          .where((post) => post.category == selectedCategory)
+          .toList(),
+    };
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -196,15 +237,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 if (filteredPosts.isEmpty) {
                   return EmptyState(
-                    icon: selectedCategory == 'Favoritos'
-                        ? Icons.favorite_border_rounded
-                        : Icons.explore_outlined,
-                    title: selectedCategory == 'Favoritos'
-                        ? 'Nenhuma loja favoritada'
-                        : 'Nenhum post encontrado',
-                    subtitle: selectedCategory == 'Favoritos'
-                        ? 'Favorite uma loja no perfil dela para vê-la aqui.'
-                        : 'Tente outra categoria ou termo de busca.',
+                    icon: switch (selectedCategory) {
+                      'Seguindo' => Icons.people_outline_rounded,
+                      'Favoritos' => Icons.bookmark_border_rounded,
+                      _ => Icons.explore_outlined,
+                    },
+                    title: switch (selectedCategory) {
+                      'Seguindo' => 'Nenhuma loja seguida',
+                      'Favoritos' => 'Nenhum post favoritado',
+                      _ => 'Nenhum post encontrado',
+                    },
+                    subtitle: switch (selectedCategory) {
+                      'Seguindo' => 'Siga uma loja no perfil dela para ver seus posts aqui.',
+                      'Favoritos' => 'Toque no bookmark de um post para salvá-lo aqui.',
+                      _ => 'Tente outra categoria ou termo de busca.',
+                    },
                   );
                 }
 
@@ -227,9 +274,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: isWide
                                 ? MasonryPostGrid(
                                     posts: filteredPosts,
+                                    savedPostIds: _savedPostIds,
                                     onTap: _openStoreProfile,
                                     onLike: _handleLike,
                                     onComment: _handleComment,
+                                    onSave: _handleSave,
                                   )
                                 : Column(
                                     children: filteredPosts
@@ -239,6 +288,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             onTap: () => _openStoreProfile(post),
                                             onLike: () => _handleLike(post),
                                             onComment: () => _handleComment(post),
+                                            onSave: () => _handleSave(post),
+                                            isSaved: _savedPostIds.contains(post.id),
                                           ),
                                         )
                                         .toList(),
