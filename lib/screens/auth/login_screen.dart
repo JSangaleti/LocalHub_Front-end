@@ -24,6 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
 
+  bool _obscurePassword = true;
+
   @override
   void initState() {
     super.initState();
@@ -135,6 +137,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   onRegister: _goToRegister,
                   onForgotPassword: () =>
                       Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                  obscurePassword: _obscurePassword,
+                  onTogglePassword: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
                 ),
               ),
             ),
@@ -179,6 +187,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   onRegister: _goToRegister,
                   onForgotPassword: () =>
                       Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                  obscurePassword: _obscurePassword,
+                  onTogglePassword: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
                 ),
               ),
             ),
@@ -198,6 +212,8 @@ class _LoginForm extends StatelessWidget {
   final VoidCallback onLogin;
   final VoidCallback onRegister;
   final VoidCallback onForgotPassword;
+  final bool obscurePassword;
+  final VoidCallback onTogglePassword;
 
   const _LoginForm({
     required this.isLoading,
@@ -207,6 +223,8 @@ class _LoginForm extends StatelessWidget {
     required this.onRegister,
     required this.onForgotPassword,
     required this.logoWidth,
+    required this.obscurePassword,
+    required this.onTogglePassword,
     this.compact = false,
   });
 
@@ -244,7 +262,15 @@ class _LoginForm extends StatelessWidget {
         CustomTextField(
           label: 'Senha',
           controller: passwordController,
-          obscureText: true,
+          obscureText: obscurePassword,
+          suffixIcon: IconButton(
+            icon: Icon(
+              obscurePassword
+                ? Icons.visibility_off
+                : Icons.visibility,
+              ),
+            onPressed: onTogglePassword,
+          ),
         ),
 
         const SizedBox(height: 22),

@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final String? hintText;
   final bool enabled;
+  final Widget? suffixIcon;
 
   const CustomTextField({
     super.key,
@@ -25,6 +26,7 @@ class CustomTextField extends StatelessWidget {
     this.inputFormatters,
     this.hintText,
     this.enabled = true,
+    this.suffixIcon,
   });
 
   @override
@@ -42,6 +44,7 @@ class CustomTextField extends StatelessWidget {
         labelText: label,
         hintText: hintText,
         alignLabelWithHint: maxLines != null && maxLines! > 1,
+        suffixIcon: suffixIcon,
       ),
     );
   }

@@ -85,8 +85,8 @@ class AdminEntityCard extends StatelessWidget {
                   tooltip: isActive == true ? 'Desativar' : 'Reativar',
                   icon: Icon(
                     isActive == true
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     size: 20,
                   ),
                   color: isActive == true ? AppColors.error : AppColors.primary,

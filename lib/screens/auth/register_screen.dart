@@ -23,6 +23,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isLoading = false;
 
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
   String? _confirmPasswordError;
 
   @override
@@ -257,17 +260,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
         CustomTextField(
           controller: _passwordController,
           label: 'Senha',
-          obscureText: true,
+          obscureText: _obscurePassword,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword
+                ? Icons.visibility_off
+                : Icons.visibility,
+            ),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+              });
+            },
+          ),
         ),
 
         const SizedBox(height: 14),
 
         TextField(
           controller: _confirmPasswordController,
-          obscureText: true,
+          obscureText: _obscureConfirmPassword,
           decoration: InputDecoration(
             labelText: 'Confirmar senha',
             errorText: _confirmPasswordError,
+            suffixIcon: IconButton(
+            icon: Icon(
+              _obscureConfirmPassword
+                ? Icons.visibility_off
+                : Icons.visibility,
+            ),
+            onPressed: () {
+            setState(() {
+              _obscureConfirmPassword = !_obscureConfirmPassword;
+              });
+            },
+          ),
           ),
         ),
 

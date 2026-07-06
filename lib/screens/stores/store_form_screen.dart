@@ -18,6 +18,7 @@ import '../../widgets/custom_text_field.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/image_picker_field.dart';
+import 'location_picker_screen.dart';
 import 'store_form_route_args.dart';
 
 class StoreFormScreen extends StatefulWidget {
@@ -38,6 +39,9 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   final _closingTimeController = TextEditingController();
   final _contactController = TextEditingController();
   final _api = ApiService();
+
+  double? _latitude;
+  double? _longitude;
 
   XFile? _pickedImage;
   String? _currentImageUrl;
@@ -66,6 +70,25 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     _applyCreateArgs();
     await _initFromRoute();
   }
+
+  Future<void> _selectLocation() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LocationPickerScreen(),
+    ),
+  );
+  print(result);
+
+  if (result == null) return;
+
+  setState(() {
+    _addressController.text = result['formattedAddress'];
+
+    _latitude = result['latitude'];
+    _longitude = result['longitude'];
+  });
+}
 
   void _applyCreateArgs() {
     final args = _readCreateArgs();
@@ -150,11 +173,17 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   }
 
   Map<String, dynamic> _buildBody() {
-    return {
-      'ownerUserId': int.parse(_ownerIdController.text.trim()),
-      'categoryId': _selectedCategoryId,
-      'cnpj': normalizeCnpj(_cnpjController.text),
-      'name': _nameController.text.trim(),
+  return {
+    'ownerUserId': int.parse(_ownerIdController.text.trim()),
+    'categoryId': _selectedCategoryId,
+    'cnpj': normalizeCnpj(_cnpjController.text),
+    'name': _nameController.text.trim(),
+
+    if (_latitude != null)
+      'latitude': _latitude,
+
+    if (_longitude != null)
+      'longitude': _longitude,
       if (_descriptionController.text.trim().isNotEmpty)
         'description': _descriptionController.text.trim(),
       if (_addressController.text.trim().isNotEmpty)
@@ -304,10 +333,34 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                           FormSection(
                             title: 'Localização e contato',
                             children: [
-                              CustomTextField(
-                                label: 'Endereço',
-                                controller: _addressController,
-                              ),
+Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    CustomTextField(
+      label: 'Endereço',
+      controller: _addressController,
+      readOnly: true,
+    ),
+
+    const SizedBox(height: 8),
+
+    OutlinedButton.icon(
+      onPressed: _selectLocation,
+      icon: const Icon(Icons.map),
+      label: const Text('Selecionar no mapa'),
+    ),
+
+    if (_latitude != null && _longitude != null)
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          'Localização selecionada: '
+          '${_latitude!.toStringAsFixed(6)}, '
+          '${_longitude!.toStringAsFixed(6)}',
+        ),
+      ),
+  ],
+),
                               const SizedBox(height: 16),
                               _TimeFields(
                                 openingController: _openingTimeController,
